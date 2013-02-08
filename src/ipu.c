@@ -165,6 +165,46 @@ void ipu_dup()
 	ipu_stack_push(new_I);
 }
 
+void ipu_clamp()
+{
+#define CLAMP(v, f, t) ({ \
+	typeof(v) __$v = (v); \
+	typeof(f) __$f = (f); \
+	typeof(t) __$t = (t); \
+	(__$v < __$f ? __$f : (__$v > __$t ? __$t : __$v)); \
+})
+	$_(I, ipu_stack_top());
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			ipu_at(I, x, y, 0) = CLAMP(ipu_at(I, x, y, 0), 0, 1);
+			ipu_at(I, x, y, 1) = CLAMP(ipu_at(I, x, y, 1), 0, 1);
+			ipu_at(I, x, y, 2) = CLAMP(ipu_at(I, x, y, 2), 0, 1);
+		}
+#undef CLAMP
+}
+
+void ipu_level(float f, float t)
+{
+#define LIRP(v, f, t, df, dt) ({ \
+	typeof(v) __$v = (v); \
+	typeof(f) __$f = (f); \
+	typeof(t) __$t = (t); \
+	typeof(df) __$df = (df); \
+	typeof(dt) __$dt = (dt); \
+	(__$v-__$f) / (__$t-__$f) * (__$dt-__$df) + __$df; \
+})
+	$_(I, ipu_stack_top());
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			ipu_at(I, x, y, 0) = LIRP(ipu_at(I, x, y, 0), f, t, 0, 1);
+			ipu_at(I, x, y, 1) = LIRP(ipu_at(I, x, y, 1), f, t, 0, 1);
+			ipu_at(I, x, y, 2) = LIRP(ipu_at(I, x, y, 2), f, t, 0, 1);
+		}
+#undef LIRP
+}
+
 
 void ipu_mix_add()
 {
@@ -191,26 +231,22 @@ void ipu_mix_div();
 
 void ipu_save_to_ppm(const char * filename)
 {
-#define CLAMP(v, f, t) ({ \
-	typeof(v) __$v = (v); \
-	typeof(f) __$f = (f); \
-	typeof(t) __$t = (t); \
-	(__$v < __$f ? __$f : (__$v > __$t ? __$t : __$v)); \
-})
 	FILE * fp = fopen(filename, "w");
+	ipu_dup();
+	ipu_clamp();
 	$_(I, ipu_stack_top());
 	fprintf(fp, "P6\n256 256\n255\n");
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
 			unsigned char color[3] = {
-				CLAMP(ipu_at(I, x, y, 0), 0, 1) * 255,
-				CLAMP(ipu_at(I, x, y, 1), 0, 1) * 255,
-				CLAMP(ipu_at(I, x, y, 2), 0, 1) * 255,
+				ipu_at(I, x, y, 0) * 255,
+				ipu_at(I, x, y, 1) * 255,
+				ipu_at(I, x, y, 2) * 255,
 			};
 			fwrite(color, sizeof(color), 1, fp);
 		}
 	fclose(fp);
-#undef CLAMP
+	ipu_image_free(ipu_stack_pop());
 }
 

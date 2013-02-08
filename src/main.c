@@ -29,6 +29,9 @@ int main()
 	ipu_blur_y(5);
 	ipu_blur_y(5);
 	ipu_mul(60, 60, 60);
+	ipu_clamp();
+	ipu_level(0.4, 1);
+	ipu_clamp();
 	ipu_mix_add();
 
 	ipu_save_to_ppm("ipu-output");

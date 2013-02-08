@@ -45,6 +45,8 @@ void ipu_blur_y(int radius);
 void ipu_blur(int radius, float angle_in_degree);
 void ipu_mul(float r, float g, float b);
 void ipu_dup();
+void ipu_clamp();
+void ipu_level(float f, float t);
 
 void ipu_mix_add();
 void ipu_mix_sub();
