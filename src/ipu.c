@@ -34,14 +34,14 @@ Image * ipu_stack_pop()
 	return I;
 }
 
-inline Image * ipu_stack_top()
+Image * ipu_stack_top()
 {
 	if (ipu_stack_is_empty()) return NULL;
 	PackElement * pe = (PackElement *)_S->prev;
 	return (Image *)pe->data;
 }
 
-inline int ipu_stack_is_empty()
+int ipu_stack_is_empty()
 {
 	return (pack_length(_S) == 0);
 }
@@ -53,13 +53,13 @@ inline int ipu_stack_is_empty()
  *
  */
 
-inline Image * ipu_image_new()
+Image * ipu_image_new()
 {
-	CREATE(Image, I);
+	create(Image, I);
 	return I;
 }
 
-inline void ipu_image_free(Image * I)
+void ipu_image_free(Image * I)
 {
 	free(I);
 }

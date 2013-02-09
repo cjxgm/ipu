@@ -23,8 +23,8 @@ IpuStack * ipu_stack_select(IpuStack * S);
 
 void ipu_stack_push(Image * I);
 Image * ipu_stack_pop();
-inline Image * ipu_stack_top();
-inline int ipu_stack_is_empty();
+Image * ipu_stack_top();
+int ipu_stack_is_empty();
 
 /***************************************************
  *
@@ -35,8 +35,8 @@ inline int ipu_stack_is_empty();
 #define ipu_at(I, x, y, idx) \
 	((I)->data[((((y) & 0xFF)<<8) | ((x) & 0xFF)) * 3 + (idx)])
 
-inline Image * ipu_image_new();
-inline void ipu_image_free(Image * I);
+Image * ipu_image_new();
+void ipu_image_free(Image * I);
 
 void ipu_color(float r, float g, float b);
 void ipu_pixel(float r, float g, float b, int npoint, int seed);

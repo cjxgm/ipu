@@ -33,11 +33,11 @@ List;
 
 
 		List * list_new();
-inline	void list_init(List * list);
+		void list_init(List * list);
 		void list_add_tail(List * list, void * data);
-inline	void list_add_head(List * list, void * data);
+		void list_add_head(List * list, void * data);
 		size_t list_length(List * list);
-inline	void list_remove(void * data);
+		void list_remove(void * data);
 		void list_delete(void * data);
 
 #endif
