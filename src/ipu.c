@@ -139,6 +139,7 @@ bool ipu_blur_y(int radius)
 	if (!I) return true;
 
 	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
+/*
 	int y, x;
 	for (x=0; x<256; x++) {
 		float color[4] = {0, 0, 0, radius*2+1};
@@ -162,6 +163,23 @@ bool ipu_blur_y(int radius)
 				 ipu_at(I, x, y-radius-1, 2)) / color[3];
 		}
 	}
+*/
+// FIXME: Why the un-optimized old version runs faster for y-axis-along
+// 			blurring, while the optimized new version run faster for
+// 			x-axis-along blurring?
+	int y, x, t;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			float color[4] = {0, 0, 0, radius*2+1};
+			for (t=y-radius; t<=y+radius; t++) {
+				color[0] += ipu_at(I, x, t, 0);
+				color[1] += ipu_at(I, x, t, 1);
+				color[2] += ipu_at(I, x, t, 2);
+			}
+			ipu_at(new_I, x, y, 0) = color[0] / color[3];
+			ipu_at(new_I, x, y, 1) = color[1] / color[3];
+			ipu_at(new_I, x, y, 2) = color[2] / color[3];
+		}
 	ipu_image_free(I);
 	ipu_stack_push(new_I);
 
