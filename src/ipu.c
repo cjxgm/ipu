@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /***************************************************
  *
@@ -20,25 +21,25 @@ IpuStack * ipu_stack_select(IpuStack * S)
 	return old_S;
 }
 
-void ipu_stack_push(Image * I)
+void ipu_stack_push(IpuImage * I)
 {
 	pack_add_tail(_S, I);
 }
 
-Image * ipu_stack_pop()
+IpuImage * ipu_stack_pop()
 {
 	if (ipu_stack_is_empty()) return NULL;
 	PackElement * pe = (PackElement *)_S->prev;
-	Image * I = (Image *)pe->data;
+	IpuImage * I = (IpuImage *)pe->data;
 	pack_delete(pe);
 	return I;
 }
 
-Image * ipu_stack_top()
+IpuImage * ipu_stack_top()
 {
 	if (ipu_stack_is_empty()) return NULL;
 	PackElement * pe = (PackElement *)_S->prev;
-	return (Image *)pe->data;
+	return (IpuImage *)pe->data;
 }
 
 int ipu_stack_is_empty()
@@ -53,13 +54,13 @@ int ipu_stack_is_empty()
  *
  */
 
-Image * ipu_image_new()
+IpuImage * ipu_image_new()
 {
-	create(Image, I);
+	create(IpuImage, I);
 	return I;
 }
 
-void ipu_image_free(Image * I)
+void ipu_image_free(IpuImage * I)
 {
 	free(I);
 }
@@ -175,14 +176,18 @@ bool ipu_dup()
 	if (!I) return true;
 
 	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			ipu_at(new_I, x, y, 0) = ipu_at(I, x, y, 0);
-			ipu_at(new_I, x, y, 1) = ipu_at(I, x, y, 1);
-			ipu_at(new_I, x, y, 2) = ipu_at(I, x, y, 2);
-		}
+	memcpy(new_I, I, sizeof(IpuImage));
 	ipu_stack_push(new_I);
+
+	return false;
+}
+
+bool ipu_ignore()
+{
+	$_(I, ipu_stack_pop());
+	if (!I) return true;
+
+	ipu_image_free(I);
 
 	return false;
 }
