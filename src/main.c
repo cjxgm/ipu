@@ -1,9 +1,12 @@
 
 #include <stdio.h>
 #include "ipu.h"
+#include "ui.h"
 
 int main()
 {
+	ui_run();
+
 	ipu_stack_select(ipu_stack_new());
 
 	ipu_color(0, 0, 0);

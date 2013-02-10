@@ -12,6 +12,9 @@ main()
 	gen "CCFLAGS = -march=native -Ofast -Wall $CCFLAGS"
 	gen "LDFLAGS = $LDFLAGS"
 	gen
+	gen "CCFLAGS += \`(pkg-config --cflags elementary)\`"
+	gen "LDFLAGS += \`(pkg-config --libs elementary)\`"
+	gen
 	gen ".PHONY: ipu clean cleanall rebuild reconf test commit"
 	gen
 	gen "ipu: build build/objects build/ipu"
