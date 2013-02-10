@@ -65,9 +65,9 @@ void ipu_image_free(Image * I)
 }
 
 
-void ipu_color(float r, float g, float b)
+bool ipu_color(float r, float g, float b)
 {
-	$_(I, ipu_image_new());
+	$_(I, ipu_image_new());	// if this fail, let it crash the app!
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
@@ -76,11 +76,15 @@ void ipu_color(float r, float g, float b)
 			ipu_at(I, x, y, 2) = b;
 		}
 	ipu_stack_push(I);
+
+	return false;
 }
 
-void ipu_pixel(float r, float g, float b, int npoint, int seed)
+bool ipu_pixel(float r, float g, float b, int npoint, int seed)
 {
 	$_(I, ipu_stack_top());
+	if (!I) return true;
+
 	srand(seed);
 	while (npoint--) {
 		int x = rand();
@@ -89,12 +93,16 @@ void ipu_pixel(float r, float g, float b, int npoint, int seed)
 		ipu_at(I, x, y, 1) = g;
 		ipu_at(I, x, y, 2) = b;
 	}
+
+	return false;
 }
 
-void ipu_blur_x(int radius)
+bool ipu_blur_x(int radius)
 {
 	$_(I, ipu_stack_pop());
-	$_(new_I, ipu_image_new());
+	if (!I) return true;
+
+	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
 	int y, x, t;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
@@ -110,12 +118,16 @@ void ipu_blur_x(int radius)
 		}
 	ipu_image_free(I);
 	ipu_stack_push(new_I);
+
+	return false;
 }
 
-void ipu_blur_y(int radius)
+bool ipu_blur_y(int radius)
 {
 	$_(I, ipu_stack_pop());
-	$_(new_I, ipu_image_new());
+	if (!I) return true;
+
+	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
 	int y, x, t;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
@@ -131,17 +143,21 @@ void ipu_blur_y(int radius)
 		}
 	ipu_image_free(I);
 	ipu_stack_push(new_I);
+
+	return false;
 }
 
-void ipu_blur(int radius, float angle_in_degree)
+bool ipu_blur(int radius, float angle_in_degree)
 {
-	ipu_blur_x(radius * cos(angle_in_degree * M_PI / 180));
-	ipu_blur_y(radius * sin(angle_in_degree * M_PI / 180));
+	return ipu_blur_x(radius * cos(angle_in_degree * M_PI / 180)) ||
+			ipu_blur_y(radius * sin(angle_in_degree * M_PI / 180));
 }
 
-void ipu_mul(float r, float g, float b)
+bool ipu_mul(float r, float g, float b)
 {
 	$_(I, ipu_stack_top());
+	if (!I) return true;
+
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
@@ -149,12 +165,16 @@ void ipu_mul(float r, float g, float b)
 			ipu_at(I, x, y, 1) *= g;
 			ipu_at(I, x, y, 2) *= b;
 		}
+
+	return false;
 }
 
-void ipu_dup()
+bool ipu_dup()
 {
 	$_(I, ipu_stack_top());
-	$_(new_I, ipu_image_new());
+	if (!I) return true;
+
+	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
@@ -163,9 +183,11 @@ void ipu_dup()
 			ipu_at(new_I, x, y, 2) = ipu_at(I, x, y, 2);
 		}
 	ipu_stack_push(new_I);
+
+	return false;
 }
 
-void ipu_clamp()
+bool ipu_clamp()
 {
 #define CLAMP(v, f, t) ({ \
 	typeof(v) __$v = (v); \
@@ -174,6 +196,8 @@ void ipu_clamp()
 	(__$v < __$f ? __$f : (__$v > __$t ? __$t : __$v)); \
 })
 	$_(I, ipu_stack_top());
+	if (!I) return true;
+
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
@@ -181,10 +205,12 @@ void ipu_clamp()
 			ipu_at(I, x, y, 1) = CLAMP(ipu_at(I, x, y, 1), 0, 1);
 			ipu_at(I, x, y, 2) = CLAMP(ipu_at(I, x, y, 2), 0, 1);
 		}
+
+	return false;
 #undef CLAMP
 }
 
-void ipu_level(float f, float t)
+bool ipu_level(float f, float t)
 {
 #define LIRP(v, f, t, df, dt) ({ \
 	typeof(v) __$v = (v); \
@@ -195,6 +221,8 @@ void ipu_level(float f, float t)
 	(__$v-__$f) / (__$t-__$f) * (__$dt-__$df) + __$df; \
 })
 	$_(I, ipu_stack_top());
+	if (!I) return true;
+
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
@@ -202,14 +230,23 @@ void ipu_level(float f, float t)
 			ipu_at(I, x, y, 1) = LIRP(ipu_at(I, x, y, 1), f, t, 0, 1);
 			ipu_at(I, x, y, 2) = LIRP(ipu_at(I, x, y, 2), f, t, 0, 1);
 		}
+
+	return false;
 #undef LIRP
 }
 
 
-void ipu_mix_add()
+bool ipu_mix_add()
 {
 	$_(I2, ipu_stack_pop());
-	$_(I , ipu_stack_top());
+	if (!I2) return true;
+
+	$_(I, ipu_stack_top());
+	if (!I) {
+		ipu_image_free(I2);
+		return true;
+	}
+
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
@@ -217,11 +254,25 @@ void ipu_mix_add()
 			ipu_at(I, x, y, 1) += ipu_at(I2, x, y, 1);
 			ipu_at(I, x, y, 2) += ipu_at(I2, x, y, 2);
 		}
+
+	return false;
 }
 
-void ipu_mix_sub();
-void ipu_mix_mul();
-void ipu_mix_div();
+bool ipu_mix_sub()
+{
+	return true;
+}
+
+bool ipu_mix_mul()
+{
+	return true;
+}
+
+bool ipu_mix_div()
+{
+	return true;
+}
+
 
 /***************************************************
  *
@@ -229,12 +280,16 @@ void ipu_mix_div();
  *
  */
 
-void ipu_save_to_ppm(const char * filename)
+bool ipu_save_to_ppm(const char * filename)
 {
 	FILE * fp = fopen(filename, "w");
-	ipu_dup();
-	ipu_clamp();
-	$_(I, ipu_stack_top());
+	if (!fp) return true;
+
+	if (ipu_dup() || ipu_clamp()) goto __fail;
+
+	$_(I, ipu_stack_pop());
+	if (!I) goto __fail;
+
 	fprintf(fp, "P6\n256 256\n255\n");
 	int y, x;
 	for (y=0; y<256; y++)
@@ -247,6 +302,12 @@ void ipu_save_to_ppm(const char * filename)
 			fwrite(color, sizeof(color), 1, fp);
 		}
 	fclose(fp);
-	ipu_image_free(ipu_stack_pop());
+
+	ipu_image_free(I);
+	return false;
+
+__fail:
+	fclose(fp);
+	return true;
 }
 
