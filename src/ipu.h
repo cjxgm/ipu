@@ -1,4 +1,5 @@
 // vim: noet ts=4 sw=4 sts=0
+// Image Processing Unit
 #ifndef __IPU__
 #define __IPU__
 
