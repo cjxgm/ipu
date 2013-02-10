@@ -7,8 +7,11 @@
 
 
 // simpler callback add
-#define $$$($object, $event, $callback, $arg) \
+#define $$$$($object, $event, $callback, $arg) \
 	evas_object_smart_callback_add($object, $event, \
+			(void *)($callback), (void *)($arg))
+#define $$$($object, $event, $callback, $arg) \
+	evas_object_event_callback_add($object, $event, \
 			(void *)($callback), (void *)($arg))
 
 
@@ -26,6 +29,8 @@ static int ops_used;
 
 
 static Evas_Object * win;
+static Evas_Object * menu_node;
+static Elm_Object_Item * menu_add;
 
 static EAPI_MAIN int elm_main(int argc, char * argv[]);
 
@@ -41,7 +46,7 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	//------------------- main window
 	win = elm_win_util_standard_add("ipu", "Image Proc Unit");
 	evas_object_resize(win, 800, 600);
-	$$$(win, "delete,request", &elm_exit, NULL);
+	$$$$(win, "delete,request", &elm_exit, NULL);
 
 	//------------------- main vbox
 	$_(box, elm_box_add(win));
@@ -89,12 +94,18 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	elm_object_content_set(nodes_frame, nodes);
 	evas_object_show(nodes);
 
-	// list items
-	elm_list_item_append(nodes, "Hi!", NULL, NULL, NULL, NULL);
-	elm_list_item_append(nodes, "Hi!", NULL, NULL, NULL, NULL);
-	elm_list_item_append(nodes, "Hi!", NULL, NULL, NULL, NULL);
-	elm_list_item_append(nodes, "Hi!", NULL, NULL, NULL, NULL);
-	elm_list_item_append(nodes, "Hi!", NULL, NULL, NULL, NULL);
+	// menu
+	menu_node = elm_menu_add(win);
+	$$$(nodes, EVAS_CALLBACK_MOUSE_DOWN,
+			$(void, (void * $1, void * $2, void * $3,
+					Evas_Event_Mouse_Down * ev) {
+				if (ev->button == 3) {
+					elm_menu_move(menu_node, ev->canvas.x, ev->canvas.y);
+					evas_object_show(menu_node);
+				}
+			}), NULL);
+
+	menu_add = elm_menu_item_add(menu_node, NULL, "document-new", "Add", NULL, NULL);
 
 	//------------------- properties
 	// frame
@@ -173,5 +184,7 @@ void ui_register_operator(const char * name, int nprop,
 		evas_object_show(spinner);
 	}
 	ops[ops_used++].table = table;
+
+	elm_menu_item_add(menu_node, menu_add, NULL, name, NULL, NULL);
 }
 
