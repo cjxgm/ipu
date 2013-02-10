@@ -29,6 +29,7 @@ static int ops_used;
 
 
 static Evas_Object * win;
+static Evas_Object * nodes;
 static Evas_Object * menu_node;
 static Elm_Object_Item * menu_add;
 
@@ -87,7 +88,7 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	evas_object_show(nodes_frame);
 
 	// list
-	$_(nodes, elm_list_add(win));
+	nodes = elm_list_add(win);
 	evas_object_size_hint_weight_set(nodes,
 			EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_size_hint_fill_set(nodes, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -183,8 +184,15 @@ void ui_register_operator(const char * name, int nprop,
 		elm_table_pack(table, spinner, 1, i, 1, 1);
 		evas_object_show(spinner);
 	}
-	ops[ops_used++].table = table;
+	ops[ops_used].table = table;
 
-	elm_menu_item_add(menu_node, menu_add, NULL, name, NULL, NULL);
+	elm_menu_item_add(menu_node, menu_add, NULL, name,
+			(void *)$(void, (int idx, void * $1, void * $2) {
+				elm_list_item_append(nodes, ops[idx].name,
+						NULL, NULL, NULL, NULL);
+				elm_list_go(nodes);
+			}), (void *)ops_used);
+
+	ops_used++;
 }
 
