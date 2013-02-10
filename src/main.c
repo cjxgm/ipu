@@ -34,6 +34,10 @@ int main()
 	ipu_clamp();
 	ipu_mix_add();
 
+	ipu_scale(0.5, 0.5);
+	ipu_move(30, 0);
+	ipu_rotate(45);
+
 	ipu_save_to_ppm("ipu-output");
 	return 0;
 }

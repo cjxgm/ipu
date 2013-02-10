@@ -279,6 +279,47 @@ bool ipu_level(float f, float t)
 }
 
 
+bool ipu_transform(float ox, float oy,
+		float xx, float xy, float yx, float yy)
+{
+	$_(I, ipu_stack_pop());
+	if (!I) return true;
+
+	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
+
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			int nx = ox + xx*x + yx*y;
+			int ny = oy + xy*x + yy*y;
+			ipu_at(new_I, x, y, 0) = ipu_at(I, nx, ny, 0);
+			ipu_at(new_I, x, y, 1) = ipu_at(I, nx, ny, 1);
+			ipu_at(new_I, x, y, 2) = ipu_at(I, nx, ny, 2);
+		}
+	ipu_image_free(I);
+	ipu_stack_push(new_I);
+
+	return false;
+}
+
+bool ipu_move(float x, float y)
+{
+	return ipu_transform(-x, -y, 1, 0, 0, 1);
+}
+
+bool ipu_scale(float x, float y)
+{
+	return ipu_transform(0, 0, 1/x, 0, 0, 1/y);
+}
+
+bool ipu_rotate(float angle_in_degree)
+{
+	float c = cos(angle_in_degree * M_PI / 180);
+	float s = sin(angle_in_degree * M_PI / 180);
+	return ipu_transform(0, 0, c, -s, s, c);
+}
+
+
 bool ipu_mix_add()
 {
 	$_(I2, ipu_stack_pop());
