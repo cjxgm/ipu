@@ -104,19 +104,29 @@ bool ipu_blur_x(int radius)
 	if (!I) return true;
 
 	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
-	int y, x, t;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			float color[4] = {0, 0, 0, radius*2+1};
-			for (t=x-radius; t<=x+radius; t++) {
-				color[0] += ipu_at(I, t, y, 0);
-				color[1] += ipu_at(I, t, y, 1);
-				color[2] += ipu_at(I, t, y, 2);
-			}
-			ipu_at(new_I, x, y, 0) = color[0] / color[3];
-			ipu_at(new_I, x, y, 1) = color[1] / color[3];
-			ipu_at(new_I, x, y, 2) = color[2] / color[3];
+	int y, x;
+	for (y=0; y<256; y++) {
+		float color[4] = {0, 0, 0, radius*2+1};
+		for (x=-radius; x<=radius; x++) {
+			color[0] += ipu_at(I, x, y, 0);
+			color[1] += ipu_at(I, x, y, 1);
+			color[2] += ipu_at(I, x, y, 2);
 		}
+		ipu_at(new_I, 0, y, 0) = color[0] / color[3];
+		ipu_at(new_I, 0, y, 1) = color[1] / color[3];
+		ipu_at(new_I, 0, y, 2) = color[2] / color[3];
+		for (x=1; x<256; x++) {
+			ipu_at(new_I, x, y, 0) = ipu_at(new_I, x-1, y, 0) +
+				(ipu_at(I, x+radius, y, 0) -
+				 ipu_at(I, x-radius-1, y, 0)) / color[3];
+			ipu_at(new_I, x, y, 1) = ipu_at(new_I, x-1, y, 1) +
+				(ipu_at(I, x+radius, y, 1) -
+				 ipu_at(I, x-radius-1, y, 1)) / color[3];
+			ipu_at(new_I, x, y, 2) = ipu_at(new_I, x-1, y, 2) +
+				(ipu_at(I, x+radius, y, 2) -
+				 ipu_at(I, x-radius-1, y, 2)) / color[3];
+		}
+	}
 	ipu_image_free(I);
 	ipu_stack_push(new_I);
 
@@ -129,19 +139,29 @@ bool ipu_blur_y(int radius)
 	if (!I) return true;
 
 	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
-	int y, x, t;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			float color[4] = {0, 0, 0, radius*2+1};
-			for (t=y-radius; t<=y+radius; t++) {
-				color[0] += ipu_at(I, x, t, 0);
-				color[1] += ipu_at(I, x, t, 1);
-				color[2] += ipu_at(I, x, t, 2);
-			}
-			ipu_at(new_I, x, y, 0) = color[0] / color[3];
-			ipu_at(new_I, x, y, 1) = color[1] / color[3];
-			ipu_at(new_I, x, y, 2) = color[2] / color[3];
+	int y, x;
+	for (x=0; x<256; x++) {
+		float color[4] = {0, 0, 0, radius*2+1};
+		for (y=-radius; y<=radius; y++) {
+			color[0] += ipu_at(I, x, y, 0);
+			color[1] += ipu_at(I, x, y, 1);
+			color[2] += ipu_at(I, x, y, 2);
 		}
+		ipu_at(new_I, x, 0, 0) = color[0] / color[3];
+		ipu_at(new_I, x, 0, 1) = color[1] / color[3];
+		ipu_at(new_I, x, 0, 2) = color[2] / color[3];
+		for (y=1; y<256; y++) {
+			ipu_at(new_I, x, y, 0) = ipu_at(new_I, x, y-1, 0) +
+				(ipu_at(I, x, y+radius, 0) -
+				 ipu_at(I, x, y-radius-1, 0)) / color[3];
+			ipu_at(new_I, x, y, 1) = ipu_at(new_I, x, y-1, 1) +
+				(ipu_at(I, x, y+radius, 1) -
+				 ipu_at(I, x, y-radius-1, 1)) / color[3];
+			ipu_at(new_I, x, y, 2) = ipu_at(new_I, x, y-1, 2) +
+				(ipu_at(I, x, y+radius, 2) -
+				 ipu_at(I, x, y-radius-1, 2)) / color[3];
+		}
+	}
 	ipu_image_free(I);
 	ipu_stack_push(new_I);
 
