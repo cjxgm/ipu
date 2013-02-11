@@ -22,6 +22,7 @@ typedef struct Operator
 	int nprop;
 	bool (*poll)(float props[]);
 	Evas_Object * table;
+	Evas_Object ** objs;
 }
 Operator;
 
@@ -224,6 +225,7 @@ void ui_register_operator(const char * name, int nprop,
 	ops[ops_used].name  = name;
 	ops[ops_used].nprop = nprop;
 	ops[ops_used].poll  = poll;
+	ops[ops_used].objs  = new(void *, * nprop);
 
 	int i;
 	$_(table, elm_table_add(win));
@@ -250,6 +252,15 @@ void ui_register_operator(const char * name, int nprop,
 		elm_spinner_label_format_set(spinner, "%0.3f");
 		elm_table_pack(table, spinner, 1, i, 1, 1);
 		evas_object_show(spinner);
+		$$$$(spinner, "changed", $(void, (int idx, Evas_Object * s) {
+			$_(o, elm_menu_item_object_get(
+					elm_list_selected_item_get(nodes)));
+			// set property
+			float * values = evas_object_data_get(o, "ipu:props");
+			values[idx] = elm_spinner_value_get(s);
+		}), i);
+
+		ops[ops_used].objs[i] = spinner;
 	}
 	ops[ops_used].table = table;
 
@@ -259,12 +270,21 @@ void ui_register_operator(const char * name, int nprop,
 				$_(o, elm_menu_item_object_get(
 						elm_list_selected_item_get(nodes)));
 				Operator * op = evas_object_data_get(o, "ipu:operator");
+
+				// switch properties editing widgets to the selected's
 				if (props_current) {
 					elm_object_content_unset(props);
 					evas_object_hide(props_current);
 				}
 				props_current = op->table;
 				elm_object_content_set(props, props_current);
+
+				// set properties
+				float * values = evas_object_data_get(o, "ipu:props");
+				for (int i=0; i<op->nprop; i++)
+					elm_spinner_value_set(op->objs[i], values[i]);
+
+				// then, show it
 				evas_object_show(props_current);
 			});
 
@@ -272,8 +292,9 @@ void ui_register_operator(const char * name, int nprop,
 					ops[idx].name, NULL, NULL, node_select_cb, NULL)));
 
 			evas_object_data_set(o, "ipu:operator", &ops[idx]);
-			evas_object_data_set(o, "ipu:props",
-					new(float, *ops[idx].nprop));
+			float * values = new(float, * ops[idx].nprop);
+			memset(values, 0, sizeof(float) * ops[idx].nprop);
+			evas_object_data_set(o, "ipu:props", values);
 
 			elm_list_go(nodes);
 		}), (void *)ops_used);
