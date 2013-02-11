@@ -26,6 +26,8 @@ void ipu_stack_push(IpuImage * I);
 IpuImage * ipu_stack_pop();
 IpuImage * ipu_stack_top();
 int ipu_stack_is_empty();
+void ipu_stack_clear();
+int ipu_stack_length();
 
 /***************************************************
  *

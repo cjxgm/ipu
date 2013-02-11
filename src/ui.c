@@ -33,12 +33,15 @@ static int ops_used;
 static Evas_Object * win;
 static Evas_Object * nodes;
 static Evas_Object * props;
+static Evas_Object * stack;
 static Evas_Object * menu_node;
 static Elm_Object_Item * menu_add;
 static Elm_Object_Item * menu_delete;
 static Evas_Object * props_current;
 
+
 static EAPI_MAIN int elm_main(int argc, char * argv[]);
+static void execute_nodes();
 
 
 void ui_run()
@@ -174,8 +177,8 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	elm_object_content_set(stack_frame, stack_scroller);
 	evas_object_show(stack_scroller);
 
-	// box
-	$_(stack, elm_table_add(win));
+	// table
+	stack = elm_table_add(win);
 	evas_object_size_hint_weight_set(stack,
 			EVAS_HINT_EXPAND, 0);
 	evas_object_size_hint_fill_set(stack, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -252,12 +255,16 @@ void ui_register_operator(const char * name, int nprop,
 		elm_spinner_label_format_set(spinner, "%0.3f");
 		elm_table_pack(table, spinner, 1, i, 1, 1);
 		evas_object_show(spinner);
+
 		$$$$(spinner, "changed", $(void, (int idx, Evas_Object * s) {
 			$_(o, elm_menu_item_object_get(
 					elm_list_selected_item_get(nodes)));
+
 			// set property
 			float * values = evas_object_data_get(o, "ipu:props");
 			values[idx] = elm_spinner_value_get(s);
+
+			execute_nodes();
 		}), i);
 
 		ops[ops_used].objs[i] = spinner;
@@ -286,6 +293,8 @@ void ui_register_operator(const char * name, int nprop,
 
 				// then, show it
 				evas_object_show(props_current);
+
+				execute_nodes();
 			});
 
 			$_(o, elm_menu_item_object_get(elm_list_item_append(nodes,
@@ -297,8 +306,46 @@ void ui_register_operator(const char * name, int nprop,
 			evas_object_data_set(o, "ipu:props", values);
 
 			elm_list_go(nodes);
+			execute_nodes();
 		}), (void *)ops_used);
 
 	ops_used++;
+}
+
+static void execute_nodes()
+{
+	// reset
+	ipu_stack_clear();
+	elm_table_clear(stack, true);
+
+	// execute nodes
+	$_(item, elm_list_first_item_get(nodes));
+	$_(item_selected, elm_list_selected_item_get(nodes));
+	while (item) {
+		$_(o, elm_menu_item_object_get(item));
+		Operator * op  = evas_object_data_get(o, "ipu:operator");
+		float * values = evas_object_data_get(o, "ipu:props");
+
+		op->poll(values);
+
+		if (item == item_selected) break;
+		item = elm_list_item_next(item);
+	}
+
+	// show result in Image Stack
+	for (int i=ipu_stack_length()-1; i>=0; i--) {
+		$_(image, elm_image_add(win));
+		size_t ppm_size;
+		$_(ppm, ipu_ppm_get(&ppm_size));
+		elm_image_resizable_set(image, 0, 0);
+		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
+		ipu_ppm_free(ppm);
+		evas_object_size_hint_min_set(image, 256, 256);
+		evas_object_size_hint_padding_set(image, 10, 10, 10, 0);
+		elm_table_pack(stack, image, 0, i, 1, 1);
+		evas_object_show(image);
+
+		ipu_ignore();
+	}
 }
 

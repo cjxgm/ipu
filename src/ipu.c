@@ -47,6 +47,18 @@ int ipu_stack_is_empty()
 	return (pack_length(_S) == 0);
 }
 
+void ipu_stack_clear()
+{
+	IpuImage * I;
+	while ((I = ipu_stack_pop()))
+		ipu_image_free(I);
+}
+
+int ipu_stack_length()
+{
+	return pack_length(_S);
+}
+
 
 /***************************************************
  *
