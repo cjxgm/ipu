@@ -364,11 +364,56 @@ bool ipu_mix_div()
  *
  */
 
-bool ipu_save_to_ppm(const char * filename)
+unsigned char * ipu_ppm_get(size_t * size)
+{
+#define PPM_SIZE	(3+8+4 + 256*256*3)
+	if (ipu_dup() || ipu_clamp()) return NULL;
+
+	$_(I, ipu_stack_pop());
+	if (!I) return NULL;
+
+	// if this fail, let it crash the app!
+	create(unsigned char, ppm, * PPM_SIZE);
+	memcpy(ppm, "P6\n256 256\n255\n", 3+8+4);
+
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			ppm[3+8+4 + ((y<<8)|x)*3 + 0] = ipu_at(I, x, y, 0) * 255;
+			ppm[3+8+4 + ((y<<8)|x)*3 + 1] = ipu_at(I, x, y, 1) * 255;
+			ppm[3+8+4 + ((y<<8)|x)*3 + 2] = ipu_at(I, x, y, 2) * 255;
+		}
+
+	ipu_image_free(I);
+	if (size) *size = PPM_SIZE;
+	return ppm;
+#undef PPM_SIZE
+}
+
+void ipu_ppm_free(unsigned char * ppm)
+{
+	free(ppm);
+}
+
+bool ipu_ppm_save_to_file(const char * filename)
 {
 	FILE * fp = fopen(filename, "w");
 	if (!fp) return true;
 
+// TODO: measure the performance
+	size_t ppm_size;
+	$_(ppm, ipu_ppm_get(&ppm_size));
+	if (!ppm) {
+		fclose(fp);
+		return true;
+	}
+
+	fwrite(ppm, ppm_size, 1, fp);
+	ipu_ppm_free(ppm);
+
+	fclose(fp);
+	return false;
+/*
 	if (ipu_dup() || ipu_clamp()) goto __fail;
 
 	$_(I, ipu_stack_pop());
@@ -393,5 +438,6 @@ bool ipu_save_to_ppm(const char * filename)
 __fail:
 	fclose(fp);
 	return true;
+*/
 }
 

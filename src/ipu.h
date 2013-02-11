@@ -66,11 +66,16 @@ bool ipu_mix_div();
 
 /***************************************************
  *
- * file io
+ * io
  *
  */
 
-bool ipu_save_to_ppm(const char * filename);
+// you should free the returned data with ipu_ppm_free by your self!
+// <size> can be NULL if you don't need it
+unsigned char * ipu_ppm_get(size_t * size);
+
+void ipu_ppm_free(unsigned char * ppm);
+bool ipu_ppm_save_to_file(const char * filename);
 
 #endif
 

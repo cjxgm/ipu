@@ -5,8 +5,6 @@
 
 int main()
 {
-	ui_run();
-
 	ipu_stack_select(ipu_stack_new());
 
 	ipu_color(0, 0, 0);
@@ -41,7 +39,8 @@ int main()
 	ipu_move(30, 0);
 	ipu_rotate(45);
 
-	ipu_save_to_ppm("ipu-output");
+	ui_run();
+
 	return 0;
 }
 

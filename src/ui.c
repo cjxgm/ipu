@@ -1,9 +1,10 @@
 // vim: noet ts=4 sw=4 sts=0
 #include <Elementary.h>
-#include <Imlib2.h>
+#include <stdio.h>
 #include "ui.h"
 #include "util.h"
 #include "ops.h"
+#include "ipu.h"
 
 
 // simpler callback add
@@ -87,7 +88,7 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	// frame
 	$_(nodes_frame, elm_frame_add(win));
 	elm_object_text_set(nodes_frame, "Nodes");
-	evas_object_size_hint_weight_set(nodes_frame, 0.5, EVAS_HINT_EXPAND);
+	evas_object_size_hint_weight_set(nodes_frame, 0.2, EVAS_HINT_EXPAND);
 	evas_object_size_hint_fill_set(nodes_frame,
 			EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_box_pack_end(content, nodes_frame);
@@ -157,26 +158,54 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	// frame
 	$_(stack_frame, elm_frame_add(win));
 	elm_object_text_set(stack_frame, "Image Stack");
-	evas_object_size_hint_weight_set(stack_frame, 0.5, 1);
+	evas_object_size_hint_weight_set(stack_frame, 0.75, 1);
 	evas_object_size_hint_align_set(stack_frame,
 			EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_box_pack_end(content, stack_frame);
 	evas_object_show(stack_frame);
 
-	// list
-	$_(stack, elm_list_add(win));
-	evas_object_size_hint_weight_set(stack,
+	// scroller
+	$_(stack_scroller, elm_scroller_add(win));
+	evas_object_size_hint_weight_set(stack_scroller,
 			EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_fill_set(stack_scroller,
+			EVAS_HINT_FILL, EVAS_HINT_FILL);
+	elm_object_content_set(stack_frame, stack_scroller);
+	evas_object_show(stack_scroller);
+
+	// box
+	$_(stack, elm_table_add(win));
+	evas_object_size_hint_weight_set(stack,
+			EVAS_HINT_EXPAND, 0);
 	evas_object_size_hint_fill_set(stack, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	elm_object_content_set(stack_frame, stack);
+	elm_object_content_set(stack_scroller, stack);
 	evas_object_show(stack);
 
-	// list items
-	elm_list_item_append(stack, "Hi!", NULL, NULL, NULL, NULL);
-	elm_list_item_append(stack, "Hi!", NULL, NULL, NULL, NULL);
-	elm_list_item_append(stack, "Hi!", NULL, NULL, NULL, NULL);
-	elm_list_item_append(stack, "Hi!", NULL, NULL, NULL, NULL);
-	elm_list_item_append(stack, "Hi!", NULL, NULL, NULL, NULL);
+	// image test
+	{
+		$_(image, elm_image_add(win));
+		size_t ppm_size;
+		$_(ppm, ipu_ppm_get(&ppm_size));
+		elm_image_resizable_set(image, 0, 0);
+		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
+		ipu_ppm_free(ppm);
+		evas_object_size_hint_min_set(image, 256, 256);
+		evas_object_size_hint_padding_set(image, 10, 10, 10, 0);
+		elm_table_pack(stack, image, 0, 0, 1, 1);
+		evas_object_show(image);
+	}
+	{
+		$_(image, elm_image_add(win));
+		size_t ppm_size;
+		$_(ppm, ipu_ppm_get(&ppm_size));
+		elm_image_resizable_set(image, 0, 0);
+		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
+		ipu_ppm_free(ppm);
+		evas_object_size_hint_min_set(image, 256, 256);
+		evas_object_size_hint_padding_set(image, 10, 10, 10, 0);
+		elm_table_pack(stack, image, 0, 1, 1, 1);
+		evas_object_show(image);
+	}
 
 	//------------------- prepare operators
 	ops_register_operators();
