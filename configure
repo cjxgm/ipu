@@ -17,7 +17,7 @@ main()
 	gen
 	gen ".PHONY: ipu clean cleanall rebuild reconf test commit"
 	gen
-	gen "ipu: build build/objects build/ipu"
+	gen "ipu: init build/ipu"
 	gen "clean:"
 	gen -e "\trm -rf build"
 	gen "cleanall: clean"
@@ -25,13 +25,14 @@ main()
 	gen "rebuild: clean build/ipu"
 	gen "reconf:"
 	gen -e "\t./configure"
-	gen "test: build/ipu"
+	gen "test: init build/ipu"
 	gen -e "\tcd build && ./ipu && feh ipu-output"
 	gen "commit: cleanall"
 	gen -e "\tgit add ."
 	gen -e "\tenv LANG=C git commit -a || true"
 	gen -e "\t./configure"
 	gen
+	gen "init: build build/objects"
 	gen "build:"
 	gen -e "\tmkdir build"
 	gen "build/objects:"
