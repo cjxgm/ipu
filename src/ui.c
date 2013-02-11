@@ -30,8 +30,11 @@ static int ops_used;
 
 static Evas_Object * win;
 static Evas_Object * nodes;
+static Evas_Object * props;
 static Evas_Object * menu_node;
 static Elm_Object_Item * menu_add;
+static Elm_Object_Item * menu_delete;
+static Evas_Object * props_current;
 
 static EAPI_MAIN int elm_main(int argc, char * argv[]);
 
@@ -66,6 +69,9 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	elm_toolbar_item_append(toolbar, "document-new", "New", NULL, NULL);
 	elm_toolbar_item_append(toolbar, "document-open", "Open", NULL, NULL);
 	elm_toolbar_item_append(toolbar, "document-save", "Save", NULL, NULL);
+	elm_toolbar_item_append(toolbar, "system-run", "Settings", NULL, NULL);
+	elm_toolbar_item_append(toolbar, "edit-delete", "Exit",
+			(void *)&elm_exit, NULL);
 
 	//------------------- content hbox
 	$_(content, elm_box_add(win));
@@ -97,16 +103,36 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 
 	// menu
 	menu_node = elm_menu_add(win);
+	// show menu when right clicked
 	$$$(nodes, EVAS_CALLBACK_MOUSE_DOWN,
 			$(void, (void * $1, void * $2, void * $3,
 					Evas_Event_Mouse_Down * ev) {
 				if (ev->button == 3) {
+					// when no item selected, disable "Delete" item
+					elm_object_item_disabled_set(menu_delete,
+							!elm_list_selected_item_get(nodes));
+
 					elm_menu_move(menu_node, ev->canvas.x, ev->canvas.y);
 					evas_object_show(menu_node);
 				}
 			}), NULL);
 
-	menu_add = elm_menu_item_add(menu_node, NULL, "document-new", "Add", NULL, NULL);
+	menu_add = elm_menu_item_add(menu_node, NULL,
+			"document-new", "Add", NULL, NULL);
+
+	menu_delete = elm_menu_item_add(menu_node, NULL,
+		"edit-delete", "Delete", (void *)$(void, () {
+			$_(item, elm_list_selected_item_get(nodes));
+			$_(o, elm_menu_item_object_get(item));
+			Operator * op = evas_object_data_get(o, "ipu:operator");
+
+			elm_object_content_unset(props);
+			evas_object_hide(op->table);
+			props_current = NULL;
+
+			free(evas_object_data_get(o, "ipu:props"));
+			elm_object_item_del(item);
+		}), NULL);
 
 	//------------------- properties
 	// frame
@@ -120,7 +146,7 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	evas_object_show(props_frame);
 
 	// scroller
-	$_(props, elm_scroller_add(win));
+	props = elm_scroller_add(win);
 	evas_object_size_hint_weight_set(props,
 			EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_size_hint_fill_set(props, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -172,6 +198,10 @@ void ui_register_operator(const char * name, int nprop,
 
 	int i;
 	$_(table, elm_table_add(win));
+	evas_object_size_hint_weight_set(table,
+			EVAS_HINT_EXPAND, 0);
+	evas_object_size_hint_fill_set(table,
+			EVAS_HINT_FILL, EVAS_HINT_FILL);
 	for (i=0; i<nprop; i++) {
 		// label
 		$_(label, elm_label_add(win));
@@ -181,17 +211,43 @@ void ui_register_operator(const char * name, int nprop,
 
 		// spinner
 		$_(spinner, elm_spinner_add(win));
+		evas_object_size_hint_weight_set(spinner,
+				EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+		evas_object_size_hint_fill_set(spinner,
+				EVAS_HINT_FILL, EVAS_HINT_FILL);
+		elm_spinner_min_max_set(spinner, -65536, 65536);
+		elm_spinner_step_set(spinner, 0.1);
+		elm_spinner_round_set(spinner, 0.001);
+		elm_spinner_label_format_set(spinner, "%0.3f");
 		elm_table_pack(table, spinner, 1, i, 1, 1);
 		evas_object_show(spinner);
 	}
 	ops[ops_used].table = table;
 
 	elm_menu_item_add(menu_node, menu_add, NULL, name,
-			(void *)$(void, (int idx, void * $1, void * $2) {
-				elm_list_item_append(nodes, ops[idx].name,
-						NULL, NULL, NULL, NULL);
-				elm_list_go(nodes);
-			}), (void *)ops_used);
+		(void *)$(void, (int idx, void * $1, void * $2) {
+			void * node_select_cb = $(void, () {
+				$_(o, elm_menu_item_object_get(
+						elm_list_selected_item_get(nodes)));
+				Operator * op = evas_object_data_get(o, "ipu:operator");
+				if (props_current) {
+					elm_object_content_unset(props);
+					evas_object_hide(props_current);
+				}
+				props_current = op->table;
+				elm_object_content_set(props, props_current);
+				evas_object_show(props_current);
+			});
+
+			$_(o, elm_menu_item_object_get(elm_list_item_append(nodes,
+					ops[idx].name, NULL, NULL, node_select_cb, NULL)));
+
+			evas_object_data_set(o, "ipu:operator", &ops[idx]);
+			evas_object_data_set(o, "ipu:props",
+					new(float, *ops[idx].nprop));
+
+			elm_list_go(nodes);
+		}), (void *)ops_used);
 
 	ops_used++;
 }
