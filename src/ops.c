@@ -5,10 +5,10 @@
 #include "ipu.h"
 
 #define expand(x...)	x
-#define operator($name, $prop_infos, $poll...) ({ \
+#define operator($name, $prop_infos, $pull...) ({ \
 	static PropInfo $prop_infos$[] = expand $prop_infos; \
 	ui_register_operator($name, array_length($prop_infos$), \
-			$prop_infos$, $(bool, (float v[]) $poll)); \
+			$prop_infos$, $(bool, (float v[]) $pull)); \
 })
 
 #define MIN		(-1e6)
@@ -44,8 +44,8 @@ void ops_register_operators()
 		int rx = v[0];
 		int ry = v[1];
 		int n  = v[2];
-		if (rx > 0) for (int i=0; i<n; i++) err |= ipu_blur_x(rx);
-		if (ry > 0) for (int i=0; i<n; i++) err |= ipu_blur_y(ry);
+		if (rx) for (int i=0; i<n; i++) err |= ipu_blur_x(rx);
+		if (ry) for (int i=0; i<n; i++) err |= ipu_blur_y(ry);
 		err |= ipu_mul(v[3], v[3], v[3]);
 		return err;
 	});

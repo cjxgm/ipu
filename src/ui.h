@@ -21,7 +21,7 @@ PropInfo;
 
 void ui_run();
 void ui_register_operator(const char * name, int nprop,
-		PropInfo prop_infos[], bool poll(float v[]));
+		PropInfo prop_infos[], bool pull(float v[]));
 
 
 #endif

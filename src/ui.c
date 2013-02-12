@@ -20,7 +20,7 @@ typedef struct Operator
 {
 	const char * name;
 	int nprop;
-	bool (*poll)(float v[]);
+	bool (*pull)(float v[]);
 	PropInfo * infos;
 	Evas_Object * table;
 	Evas_Object ** objs;
@@ -186,11 +186,11 @@ EAPI_MAIN int elm_main(int argc, char * argv[])
 }
 
 void ui_register_operator(const char * name, int nprop,
-		PropInfo prop_infos[], bool poll(float v[]))
+		PropInfo prop_infos[], bool pull(float v[]))
 {
 	ops[ops_used].name  = name;
 	ops[ops_used].nprop = nprop;
-	ops[ops_used].poll  = poll;
+	ops[ops_used].pull  = pull;
 	ops[ops_used].infos = prop_infos;
 	ops[ops_used].objs  = new(void *, * nprop);
 
@@ -292,7 +292,7 @@ static void execute_nodes()
 		Operator * op  = evas_object_data_get(o, "ipu:operator");
 		float * values = evas_object_data_get(o, "ipu:v");
 
-		if (op->poll(values)) {
+		if (op->pull(values)) {
 			if (item_selected == item)
 				popup_message("Error", "An error occured when executing nodes.");
 			else elm_list_item_selected_set(item, true);
