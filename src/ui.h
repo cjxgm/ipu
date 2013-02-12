@@ -8,9 +8,20 @@
 
 #define UI_MAX_OPERATORS	128
 
+typedef struct PropInfo		// property information
+{
+	const char * name;		// property name
+	float value;			// default value
+	float min;
+	float max;
+	float round;			// how precise is it?
+	float step;				// how much should I ++/-- when dragged?
+}
+PropInfo;
+
 void ui_run();
 void ui_register_operator(const char * name, int nprop,
-		const char * prop_names[], bool poll(float props[]));
+		PropInfo prop_infos[], bool poll(float v[]));
 
 
 #endif

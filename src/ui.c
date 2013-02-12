@@ -20,7 +20,8 @@ typedef struct Operator
 {
 	const char * name;
 	int nprop;
-	bool (*poll)(float props[]);
+	bool (*poll)(float v[]);
+	PropInfo * infos;
 	Evas_Object * table;
 	Evas_Object ** objs;
 }
@@ -128,7 +129,7 @@ EAPI_MAIN int elm_main(int argc, char * argv[])
 			evas_object_hide(op->table);
 			props_current = NULL;
 
-			free(evas_object_data_get(o, "ipu:props"));
+			free(evas_object_data_get(o, "ipu:v"));
 			elm_object_item_del(item);
 
 			execute_nodes();
@@ -185,11 +186,12 @@ EAPI_MAIN int elm_main(int argc, char * argv[])
 }
 
 void ui_register_operator(const char * name, int nprop,
-		const char * prop_names[], bool poll(float props[]))
+		PropInfo prop_infos[], bool poll(float v[]))
 {
 	ops[ops_used].name  = name;
 	ops[ops_used].nprop = nprop;
 	ops[ops_used].poll  = poll;
+	ops[ops_used].infos = prop_infos;
 	ops[ops_used].objs  = new(void *, * nprop);
 
 	int i;
@@ -197,9 +199,11 @@ void ui_register_operator(const char * name, int nprop,
 	evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, 0);
 	evas_object_size_hint_fill_set(table, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	for (i=0; i<nprop; i++) {
+		$_(info, &prop_infos[i]);
+
 		// label
 		$_(label, elm_label_add(win));
-		elm_object_text_set(label, prop_names[i]);
+		elm_object_text_set(label, info->name);
 		elm_table_pack(table, label, 0, i, 1, 1);
 		evas_object_show(label);
 
@@ -207,10 +211,10 @@ void ui_register_operator(const char * name, int nprop,
 		$_(spinner, elm_spinner_add(win));
 		evas_object_size_hint_weight_set(spinner, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 		evas_object_size_hint_fill_set(spinner, EVAS_HINT_FILL, EVAS_HINT_FILL);
-		elm_spinner_min_max_set(spinner, -65536, 65536);
-		elm_spinner_step_set(spinner, 0.1);
-		elm_spinner_round_set(spinner, 0.001);
-		elm_spinner_label_format_set(spinner, "%0.3f");
+		elm_spinner_min_max_set(spinner, info->min, info->max);
+		elm_spinner_round_set(spinner, info->round);
+		elm_spinner_step_set(spinner, info->step);
+		elm_spinner_label_format_set(spinner, "%g");
 		elm_table_pack(table, spinner, 1, i, 1, 1);
 		evas_object_show(spinner);
 
@@ -218,7 +222,7 @@ void ui_register_operator(const char * name, int nprop,
 			$_(o, elm_menu_item_object_get(elm_list_selected_item_get(nodes)));
 
 			// set property
-			float * values = evas_object_data_get(o, "ipu:props");
+			float * values = evas_object_data_get(o, "ipu:v");
 			values[idx] = elm_spinner_value_get(s);
 
 			execute_nodes();
@@ -230,7 +234,8 @@ void ui_register_operator(const char * name, int nprop,
 
 	elm_menu_item_add(menu_node, menu_add, NULL, name,
 		(void *)$(void, (int idx, void * $1, void * $2) {
-			void * node_select_cb = $(void, () {
+			void node_select_cb()
+			{
 				$_(o, elm_menu_item_object_get(elm_list_selected_item_get(nodes)));
 				Operator * op = evas_object_data_get(o, "ipu:operator");
 
@@ -243,7 +248,7 @@ void ui_register_operator(const char * name, int nprop,
 				elm_object_content_set(props, props_current);
 
 				// set properties
-				float * values = evas_object_data_get(o, "ipu:props");
+				float * values = evas_object_data_get(o, "ipu:v");
 				for (int i=0; i<op->nprop; i++)
 					elm_spinner_value_set(op->objs[i], values[i]);
 
@@ -251,15 +256,20 @@ void ui_register_operator(const char * name, int nprop,
 				evas_object_show(props_current);
 
 				execute_nodes();
-			});
+			};
 
+			$_(op, &ops[idx]);
 			$_(o, elm_menu_item_object_get(elm_list_item_append(nodes,
-					ops[idx].name, NULL, NULL, node_select_cb, NULL)));
+					op->name, NULL, NULL, (void *)&node_select_cb, NULL)));
 
-			evas_object_data_set(o, "ipu:operator", &ops[idx]);
-			float * values = new(float, * ops[idx].nprop);
-			memset(values, 0, sizeof(float) * ops[idx].nprop);
-			evas_object_data_set(o, "ipu:props", values);
+			// setup datas needed
+			// operator
+			evas_object_data_set(o, "ipu:operator", op);
+			// values
+			float * values = new(float, * op->nprop);
+			for (int i=0; i<op->nprop; i++)
+				values[i] = op->infos[i].value;
+			evas_object_data_set(o, "ipu:v", values);
 
 			elm_list_go(nodes);
 			execute_nodes();
@@ -280,7 +290,7 @@ static void execute_nodes()
 	while (item) {
 		$_(o, elm_menu_item_object_get(item));
 		Operator * op  = evas_object_data_get(o, "ipu:operator");
-		float * values = evas_object_data_get(o, "ipu:props");
+		float * values = evas_object_data_get(o, "ipu:v");
 
 		if (op->poll(values)) {
 			if (item_selected == item)
