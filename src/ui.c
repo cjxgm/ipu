@@ -42,6 +42,7 @@ static Evas_Object * props_current;
 
 EAPI_MAIN int elm_main(int argc, char * argv[]);
 static void execute_nodes();
+static void popup_message(const char * title, const char * content);
 
 
 void ui_run()
@@ -281,7 +282,12 @@ static void execute_nodes()
 		Operator * op  = evas_object_data_get(o, "ipu:operator");
 		float * values = evas_object_data_get(o, "ipu:props");
 
-		op->poll(values);
+		if (op->poll(values)) {
+			if (item_selected == item)
+				popup_message("Error", "An error occured when executing nodes.");
+			else elm_list_item_selected_set(item, true);
+			break;
+		}
 
 		if (item == item_selected) break;
 		item = elm_list_item_next(item);
@@ -303,5 +309,19 @@ static void execute_nodes()
 
 		ipu_ignore();
 	}
+}
+
+static void popup_message(const char * title, const char * content)
+{
+	$_(popup, elm_popup_add(win));
+	elm_popup_orient_set(popup, ELM_POPUP_ORIENT_BOTTOM);
+	evas_object_size_hint_weight_set(popup, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	elm_object_text_set(popup, content);
+	elm_object_part_text_set(popup, "title,text", title);
+	evas_object_show(popup);
+
+	$$$$(popup, "block,clicked", $(void, (void * $1, Evas_Object * o) {
+		evas_object_del(o);
+	}), NULL);
 }
 
