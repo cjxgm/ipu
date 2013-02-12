@@ -129,6 +129,8 @@ EAPI_MAIN int elm_main(int argc, char * argv[])
 
 			free(evas_object_data_get(o, "ipu:props"));
 			elm_object_item_del(item);
+
+			execute_nodes();
 		}), NULL);
 
 	//------------------- properties
@@ -169,32 +171,6 @@ EAPI_MAIN int elm_main(int argc, char * argv[])
 	evas_object_size_hint_fill_set(stack, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_object_content_set(stack_scroller, stack);
 	evas_object_show(stack);
-
-	// image test
-	{
-		$_(image, elm_image_add(win));
-		size_t ppm_size;
-		$_(ppm, ipu_ppm_get(&ppm_size));
-		elm_image_resizable_set(image, 0, 0);
-		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
-		ipu_ppm_free(ppm);
-		evas_object_size_hint_min_set(image, 256, 256);
-		evas_object_size_hint_padding_set(image, 10, 10, 10, 0);
-		elm_table_pack(stack, image, 0, 0, 1, 1);
-		evas_object_show(image);
-	}
-	{
-		$_(image, elm_image_add(win));
-		size_t ppm_size;
-		$_(ppm, ipu_ppm_get(&ppm_size));
-		elm_image_resizable_set(image, 0, 0);
-		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
-		ipu_ppm_free(ppm);
-		evas_object_size_hint_min_set(image, 256, 256);
-		evas_object_size_hint_padding_set(image, 10, 10, 10, 0);
-		elm_table_pack(stack, image, 0, 1, 1, 1);
-		evas_object_show(image);
-	}
 
 	//------------------- prepare operators
 	ops_register_operators();
@@ -314,15 +290,16 @@ static void execute_nodes()
 	// show result in Image Stack
 	for (int i=ipu_stack_length()-1; i>=0; i--) {
 		$_(image, elm_image_add(win));
-		size_t ppm_size;
-		$_(ppm, ipu_ppm_get(&ppm_size));
 		elm_image_resizable_set(image, 0, 0);
-		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
-		ipu_ppm_free(ppm);
 		evas_object_size_hint_min_set(image, 256, 256);
 		evas_object_size_hint_padding_set(image, 10, 10, 10, 0);
 		elm_table_pack(stack, image, 0, i, 1, 1);
 		evas_object_show(image);
+
+		size_t ppm_size;
+		$_(ppm, ipu_ppm_get(&ppm_size));
+		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
+		ipu_ppm_free(ppm);
 
 		ipu_ignore();
 	}
