@@ -21,7 +21,7 @@ typedef struct Operator
 	const char * name;
 	int nprop;
 	bool (*pull)(float v[]);
-	PropInfo * infos;
+	const PropInfo * infos;
 	Evas_Object * table;
 	Evas_Object ** objs;
 }
@@ -186,7 +186,7 @@ EAPI_MAIN int elm_main(int argc, char * argv[])
 }
 
 void ui_register_operator(const char * name, int nprop,
-		PropInfo prop_infos[], bool pull(float v[]))
+		const PropInfo prop_infos[], bool pull(float v[]))
 {
 	ops[ops_used].name  = name;
 	ops[ops_used].nprop = nprop;
