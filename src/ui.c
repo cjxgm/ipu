@@ -56,6 +56,8 @@ static void document_save(const char * fn);
 static Operator * op_find_by_name(const char * name);
 static void op_add(Operator * op, float * values);
 
+extern const char * initial_file_to_open;	// in main.c
+
 
 void ui_run()
 {
@@ -202,6 +204,8 @@ EAPI_MAIN int elm_main(int argc, char * argv[])
 
 	//------------------- done!
 	evas_object_show(win);
+
+	if (initial_file_to_open) document_open(initial_file_to_open);
 
 	elm_run();
 	elm_shutdown();
