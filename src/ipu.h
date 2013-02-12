@@ -55,8 +55,7 @@ bool ipu_level(float f, float t);
 // o[xy] is the new origin
 // x[xy] is the new x-axis, y[xy] if the new y-axis
 // with this function, you can do rotation, scaling(nearest), squeeze etc.
-bool ipu_transform(float ox, float oy,
-		float xx, float xy, float yx, float yy);
+bool ipu_transform(float ox, float oy, float xx, float xy, float yx, float yy);
 bool ipu_move(float x, float y);
 bool ipu_scale(float x, float y);
 bool ipu_rotate(float angle_in_degree);

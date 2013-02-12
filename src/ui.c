@@ -40,7 +40,7 @@ static Elm_Object_Item * menu_delete;
 static Evas_Object * props_current;
 
 
-static EAPI_MAIN int elm_main(int argc, char * argv[]);
+EAPI_MAIN int elm_main(int argc, char * argv[]);
 static void execute_nodes();
 
 
@@ -50,7 +50,7 @@ void ui_run()
 	main(0, NULL);
 }
 
-static EAPI_MAIN int elm_main(int argc, char * argv[])
+EAPI_MAIN int elm_main(int argc, char * argv[])
 {
 	//------------------- main window
 	win = elm_win_util_standard_add("ipu", "Image Proc Unit");
@@ -75,16 +75,13 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	elm_toolbar_item_append(toolbar, "document-open", "Open", NULL, NULL);
 	elm_toolbar_item_append(toolbar, "document-save", "Save", NULL, NULL);
 	elm_toolbar_item_append(toolbar, "system-run", "Settings", NULL, NULL);
-	elm_toolbar_item_append(toolbar, "edit-delete", "Exit",
-			(void *)&elm_exit, NULL);
+	elm_toolbar_item_append(toolbar, "edit-delete", "Exit", (void *)&elm_exit, NULL);
 
 	//------------------- content hbox
 	$_(content, elm_box_add(win));
 	elm_box_horizontal_set(content, EINA_TRUE);
-	evas_object_size_hint_weight_set(content,
-			EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_fill_set(content,
-			EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_size_hint_weight_set(content, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_fill_set(content, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_box_pack_end(box, content);
 	evas_object_show(content);
 
@@ -93,15 +90,13 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	$_(nodes_frame, elm_frame_add(win));
 	elm_object_text_set(nodes_frame, "Nodes");
 	evas_object_size_hint_weight_set(nodes_frame, 0.2, EVAS_HINT_EXPAND);
-	evas_object_size_hint_fill_set(nodes_frame,
-			EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_size_hint_fill_set(nodes_frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_box_pack_end(content, nodes_frame);
 	evas_object_show(nodes_frame);
 
 	// list
 	nodes = elm_list_add(win);
-	evas_object_size_hint_weight_set(nodes,
-			EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_weight_set(nodes, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_size_hint_fill_set(nodes, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_object_content_set(nodes_frame, nodes);
 	evas_object_show(nodes);
@@ -110,20 +105,17 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	menu_node = elm_menu_add(win);
 	// show menu when right clicked
 	$$$(nodes, EVAS_CALLBACK_MOUSE_DOWN,
-			$(void, (void * $1, void * $2, void * $3,
-					Evas_Event_Mouse_Down * ev) {
-				if (ev->button == 3) {
-					// when no item selected, disable "Delete" item
-					elm_object_item_disabled_set(menu_delete,
-							!elm_list_selected_item_get(nodes));
+		$(void, (void * $1, void * $2, void * $3, Evas_Event_Mouse_Down * ev) {
+			if (ev->button == 3) {
+				// when no item selected, disable "Delete" item
+				elm_object_item_disabled_set(menu_delete, !elm_list_selected_item_get(nodes));
 
-					elm_menu_move(menu_node, ev->canvas.x, ev->canvas.y);
-					evas_object_show(menu_node);
-				}
-			}), NULL);
+				elm_menu_move(menu_node, ev->canvas.x, ev->canvas.y);
+				evas_object_show(menu_node);
+			}
+		}), NULL);
 
-	menu_add = elm_menu_item_add(menu_node, NULL,
-			"document-new", "Add", NULL, NULL);
+	menu_add = elm_menu_item_add(menu_node, NULL, "document-new", "Add", NULL, NULL);
 
 	menu_delete = elm_menu_item_add(menu_node, NULL,
 		"edit-delete", "Delete", (void *)$(void, () {
@@ -143,17 +135,14 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	// frame
 	$_(props_frame, elm_frame_add(win));
 	elm_object_text_set(props_frame, "Properties");
-	evas_object_size_hint_weight_set(props_frame,
-			EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_align_set(props_frame,
-			EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_size_hint_weight_set(props_frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_align_set(props_frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_box_pack_end(content, props_frame);
 	evas_object_show(props_frame);
 
 	// scroller
 	props = elm_scroller_add(win);
-	evas_object_size_hint_weight_set(props,
-			EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_weight_set(props, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 	evas_object_size_hint_fill_set(props, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_object_content_set(props_frame, props);
 	evas_object_show(props);
@@ -163,24 +152,20 @@ static EAPI_MAIN int elm_main(int argc, char * argv[])
 	$_(stack_frame, elm_frame_add(win));
 	elm_object_text_set(stack_frame, "Image Stack");
 	evas_object_size_hint_weight_set(stack_frame, 0.75, 1);
-	evas_object_size_hint_align_set(stack_frame,
-			EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_size_hint_align_set(stack_frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_box_pack_end(content, stack_frame);
 	evas_object_show(stack_frame);
 
 	// scroller
 	$_(stack_scroller, elm_scroller_add(win));
-	evas_object_size_hint_weight_set(stack_scroller,
-			EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	evas_object_size_hint_fill_set(stack_scroller,
-			EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_size_hint_weight_set(stack_scroller, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_fill_set(stack_scroller, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_object_content_set(stack_frame, stack_scroller);
 	evas_object_show(stack_scroller);
 
 	// table
 	stack = elm_table_add(win);
-	evas_object_size_hint_weight_set(stack,
-			EVAS_HINT_EXPAND, 0);
+	evas_object_size_hint_weight_set(stack, EVAS_HINT_EXPAND, 0);
 	evas_object_size_hint_fill_set(stack, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	elm_object_content_set(stack_scroller, stack);
 	evas_object_show(stack);
@@ -232,10 +217,8 @@ void ui_register_operator(const char * name, int nprop,
 
 	int i;
 	$_(table, elm_table_add(win));
-	evas_object_size_hint_weight_set(table,
-			EVAS_HINT_EXPAND, 0);
-	evas_object_size_hint_fill_set(table,
-			EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, 0);
+	evas_object_size_hint_fill_set(table, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	for (i=0; i<nprop; i++) {
 		// label
 		$_(label, elm_label_add(win));
@@ -245,10 +228,8 @@ void ui_register_operator(const char * name, int nprop,
 
 		// spinner
 		$_(spinner, elm_spinner_add(win));
-		evas_object_size_hint_weight_set(spinner,
-				EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-		evas_object_size_hint_fill_set(spinner,
-				EVAS_HINT_FILL, EVAS_HINT_FILL);
+		evas_object_size_hint_weight_set(spinner, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+		evas_object_size_hint_fill_set(spinner, EVAS_HINT_FILL, EVAS_HINT_FILL);
 		elm_spinner_min_max_set(spinner, -65536, 65536);
 		elm_spinner_step_set(spinner, 0.1);
 		elm_spinner_round_set(spinner, 0.001);
@@ -257,8 +238,7 @@ void ui_register_operator(const char * name, int nprop,
 		evas_object_show(spinner);
 
 		$$$$(spinner, "changed", $(void, (int idx, Evas_Object * s) {
-			$_(o, elm_menu_item_object_get(
-					elm_list_selected_item_get(nodes)));
+			$_(o, elm_menu_item_object_get(elm_list_selected_item_get(nodes)));
 
 			// set property
 			float * values = evas_object_data_get(o, "ipu:props");
@@ -274,8 +254,7 @@ void ui_register_operator(const char * name, int nprop,
 	elm_menu_item_add(menu_node, menu_add, NULL, name,
 		(void *)$(void, (int idx, void * $1, void * $2) {
 			void * node_select_cb = $(void, () {
-				$_(o, elm_menu_item_object_get(
-						elm_list_selected_item_get(nodes)));
+				$_(o, elm_menu_item_object_get(elm_list_selected_item_get(nodes)));
 				Operator * op = evas_object_data_get(o, "ipu:operator");
 
 				// switch properties editing widgets to the selected's

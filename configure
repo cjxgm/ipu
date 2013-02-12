@@ -9,7 +9,7 @@ main()
 	echo "# vim: ft=make noet ts=4 sw=4 sts=0" > makefile
 	gen
 	gen "CC = gcc"
-	gen "CCFLAGS = -march=native -Ofast -Wall $CCFLAGS"
+	gen "CCFLAGS = -march=native -Ofast -Wall -Wno-main $CCFLAGS"
 	gen "LDFLAGS = $LDFLAGS"
 	gen
 	gen "CCFLAGS += \`(pkg-config --cflags elementary)\`"
@@ -22,7 +22,7 @@ main()
 	gen -e "\trm -rf build"
 	gen "cleanall: clean"
 	gen -e "\trm -f makefile"
-	gen "rebuild: clean build/ipu"
+	gen "rebuild: clean init build/ipu"
 	gen "reconf:"
 	gen -e "\t./configure"
 	gen "test: init build/ipu"

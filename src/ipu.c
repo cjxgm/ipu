@@ -291,8 +291,7 @@ bool ipu_level(float f, float t)
 }
 
 
-bool ipu_transform(float ox, float oy,
-		float xx, float xy, float yx, float yy)
+bool ipu_transform(float ox, float oy, float xx, float xy, float yx, float yy)
 {
 	$_(I, ipu_stack_pop());
 	if (!I) return true;
@@ -372,7 +371,7 @@ bool ipu_mix_div()
 
 /***************************************************
  *
- * file io
+ * io
  *
  */
 
