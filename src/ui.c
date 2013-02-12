@@ -32,6 +32,7 @@ static int ops_used;
 
 
 static Evas_Object * win;
+static Evas_Object * toolbar;
 static Evas_Object * nodes;
 static Evas_Object * props;
 static Evas_Object * stack;
@@ -43,7 +44,14 @@ static Evas_Object * props_current;
 
 EAPI_MAIN int elm_main(int argc, char * argv[]);
 static void execute_nodes();
-static void popup_message(const char * title, const char * content);
+static Evas_Object * limit_min_size(Evas_Object * o, int w, int h);
+static void popup_message(const char * message);
+static void popup_file_selector(const char * title, bool is_save,
+								void done(const char * filename));
+static void toolbar_no_selected();
+static void document_new();
+static void document_open(const char * fn);
+static void document_save(const char * fn);
 
 
 void ui_run()
@@ -67,15 +75,27 @@ EAPI_MAIN int elm_main(int argc, char * argv[])
 	evas_object_show(box);
 
 	//------------------- toolbar
-	$_(toolbar, elm_toolbar_add(win));
+	toolbar = elm_toolbar_add(win);
 	evas_object_size_hint_align_set(toolbar, EVAS_HINT_FILL, 0);
 	elm_box_pack_end(box, toolbar);
 	evas_object_show(toolbar);
 
 	// toolbar items
-	elm_toolbar_item_append(toolbar, "document-new", "New", NULL, NULL);
-	elm_toolbar_item_append(toolbar, "document-open", "Open", NULL, NULL);
-	elm_toolbar_item_append(toolbar, "document-save", "Save", NULL, NULL);
+	elm_toolbar_item_append(toolbar, "document-new", "New",
+		(void *)$(void, () {
+			toolbar_no_selected();
+			document_new();
+		}), NULL);
+	elm_toolbar_item_append(toolbar, "document-open", "Open",
+		(void *)$(void, () {
+			toolbar_no_selected();
+			popup_file_selector("Open what?", false, &document_open);
+		}), NULL);
+	elm_toolbar_item_append(toolbar, "document-save", "Save",
+		(void *)$(void, () {
+			toolbar_no_selected();
+			popup_file_selector("Save to?", true, &document_save);
+		}), NULL);
 	elm_toolbar_item_append(toolbar, "system-run", "Settings", NULL, NULL);
 	elm_toolbar_item_append(toolbar, "edit-delete", "Exit", (void *)&elm_exit, NULL);
 
@@ -294,7 +314,7 @@ static void execute_nodes()
 
 		if (op->pull(values)) {
 			if (item_selected == item)
-				popup_message("Error", "An error occured when executing nodes.");
+				popup_message("An error occured when executing nodes.");
 			else elm_list_item_selected_set(item, true);
 			break;
 		}
@@ -321,17 +341,125 @@ static void execute_nodes()
 	}
 }
 
-static void popup_message(const char * title, const char * content)
+static Evas_Object * limit_min_size(Evas_Object * o, int w, int h)
+{
+	$_(table, elm_table_add(win));
+	$_(rect, evas_object_rectangle_add(evas_object_evas_get(o)));
+	evas_object_size_hint_min_set(rect, w, h);
+	elm_table_pack(table, rect, 0, 0, 1, 1);
+	elm_table_pack(table, o, 0, 0, 1, 1);
+	return table;
+}
+
+static void popup_message(const char * message)
 {
 	$_(popup, elm_popup_add(win));
 	elm_popup_orient_set(popup, ELM_POPUP_ORIENT_BOTTOM);
 	evas_object_size_hint_weight_set(popup, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-	elm_object_text_set(popup, content);
-	elm_object_part_text_set(popup, "title,text", title);
+	elm_object_part_text_set(popup, "title,text", message);
 	evas_object_show(popup);
 
 	$$$$(popup, "block,clicked", $(void, (void * $1, Evas_Object * o) {
 		evas_object_del(o);
 	}), NULL);
+}
+
+static void popup_file_selector(const char * title, bool is_save,
+								void done(const char * filename))
+{
+	$_(popup, elm_popup_add(win));
+	elm_popup_orient_set(popup, ELM_POPUP_ORIENT_TOP);
+	evas_object_size_hint_weight_set(popup, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	elm_object_part_text_set(popup, "title,text", title);
+	$$$$(popup, "block,clicked", $(void, (void * $1, Evas_Object * o) {
+		evas_object_del(o);
+	}), NULL);
+
+	$_(fs, elm_fileselector_add(popup));
+	elm_fileselector_is_save_set(fs, is_save);
+	elm_fileselector_expandable_set(fs, false);
+	elm_fileselector_buttons_ok_cancel_set(fs, false);
+	elm_fileselector_path_set(fs, "/tmp");
+	evas_object_size_hint_align_set(fs, EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_show(fs);
+	elm_object_content_set(popup, limit_min_size(fs, 400, 400));
+
+	$_(btn, elm_button_add(popup));
+	elm_object_text_set(btn, "OK");
+	elm_object_part_content_set(popup, "button1", btn);
+
+	// set data and bind event
+	evas_object_data_set(popup, "cb:done", done);
+	evas_object_data_set(popup, "cb:fs", fs);
+	$$$$(btn, "clicked", $(void, (Evas_Object * o) {
+		void (*done_cb)(const char * fn) = evas_object_data_get(o, "cb:done");
+		Evas_Object * f = evas_object_data_get(o, "cb:fs");
+		done_cb(elm_fileselector_selected_get(f));
+		evas_object_del(o);
+	}), popup);
+
+	evas_object_show(popup);
+}
+
+static void toolbar_no_selected()
+{
+	$_(item, elm_toolbar_selected_item_get(toolbar));
+	if (item) elm_toolbar_item_selected_set(item, false);
+}
+
+static void document_new()
+{
+	if (props_current) {
+		elm_object_content_unset(props);
+		evas_object_hide(props_current);
+	}
+	elm_table_clear(stack, true);
+
+	Elm_Object_Item * item;
+	while ((item = elm_list_last_item_get(nodes))) {
+		$_(o, elm_menu_item_object_get(item));
+		free(evas_object_data_get(o, "ipu:v"));
+		elm_object_item_del(item);
+	}
+	elm_list_go(nodes);
+}
+
+static void document_open(const char * fn)
+{
+	if (!fn) {
+		popup_message("So, what on earth are you fucking to open?!!");
+		return;
+	}
+}
+
+static void document_save(const char * fn)
+{
+	if (!fn) {
+		popup_message("So, why you clicked the fucking save?!!");
+		return;
+	}
+
+	FILE * fp = fopen(fn, "w");
+	if (!fp) {
+		popup_message("Cannot save to there.");
+		return;
+	}
+
+	$_(item, elm_list_first_item_get(nodes));
+	while (item) {
+		$_(o, elm_menu_item_object_get(item));
+		Operator * op  = evas_object_data_get(o, "ipu:operator");
+		float * values = evas_object_data_get(o, "ipu:v");
+
+		fprintf(fp, "%s", op->name);
+		for (int i=0; i<op->nprop; i++)
+			fprintf(fp, " %g", values[i]);
+		fprintf(fp, "\n");
+
+		item = elm_list_item_next(item);
+	}
+
+	fclose(fp);
+	popup_message("Saved!");
 }
 
