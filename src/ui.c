@@ -1,6 +1,7 @@
 // vim: noet ts=4 sw=4 sts=0
 #include <Elementary.h>
 #include <stdio.h>
+#include <string.h>
 #include "ui.h"
 #include "util.h"
 #include "ops.h"
@@ -52,6 +53,8 @@ static void toolbar_no_selected();
 static void document_new();
 static void document_open(const char * fn);
 static void document_save(const char * fn);
+static Operator * op_find_by_name(const char * name);
+static void op_add(Operator * op, float * values);
 
 
 void ui_run()
@@ -253,47 +256,11 @@ void ui_register_operator(const char * name, int nprop,
 	ops[ops_used].table = table;
 
 	elm_menu_item_add(menu_node, menu_add, NULL, name,
-		(void *)$(void, (int idx, void * $1, void * $2) {
-			void node_select_cb()
-			{
-				$_(o, elm_menu_item_object_get(elm_list_selected_item_get(nodes)));
-				Operator * op = evas_object_data_get(o, "ipu:operator");
-
-				// switch properties editing widgets to the selected's
-				if (props_current) {
-					elm_object_content_unset(props);
-					evas_object_hide(props_current);
-				}
-				props_current = op->table;
-				elm_object_content_set(props, props_current);
-
-				// set properties
-				float * values = evas_object_data_get(o, "ipu:v");
-				for (int i=0; i<op->nprop; i++)
-					elm_spinner_value_set(op->objs[i], values[i]);
-
-				// then, show it
-				evas_object_show(props_current);
-
-				execute_nodes();
-			};
-
-			$_(op, &ops[idx]);
-			$_(o, elm_menu_item_object_get(elm_list_item_append(nodes,
-					op->name, NULL, NULL, (void *)&node_select_cb, NULL)));
-
-			// setup datas needed
-			// operator
-			evas_object_data_set(o, "ipu:operator", op);
-			// values
-			float * values = new(float, * op->nprop);
-			for (int i=0; i<op->nprop; i++)
-				values[i] = op->infos[i].value;
-			evas_object_data_set(o, "ipu:v", values);
-
+		(void *)$(void, (Operator * op) {
+			op_add(op, NULL);
 			elm_list_go(nodes);
 			execute_nodes();
-		}), (void *)ops_used);
+		}), &ops[ops_used]);
 
 	ops_used++;
 }
@@ -430,6 +397,35 @@ static void document_open(const char * fn)
 		popup_message("So, what on earth are you fucking to open?!!");
 		return;
 	}
+
+	FILE * fp = fopen(fn, "r");
+	if (!fp) {
+		popup_message("Cannot open that.");
+		return;
+	}
+
+	document_new();
+
+	char op_name[64];
+	while (fscanf(fp, "%63s", op_name) != EOF) {
+		$_(op, op_find_by_name(op_name));
+		if (!op) {
+			fclose(fp);
+			popup_message("Invalid file!");
+			return;
+		}
+
+		float * values = new(float, * op->nprop);
+		for (int i=0; i<op->nprop; i++)
+			fscanf(fp, "%g", &values[i]);
+		op_add(op, values);
+	}
+
+	fclose(fp);
+	popup_message("Opened!");
+
+	elm_list_go(nodes);
+	execute_nodes();
 }
 
 static void document_save(const char * fn)
@@ -461,5 +457,55 @@ static void document_save(const char * fn)
 
 	fclose(fp);
 	popup_message("Saved!");
+}
+
+static Operator * op_find_by_name(const char * name)
+{
+	for (int i=0; i<ops_used; i++)
+		if (!strcmp(name, ops[i].name))
+			return &ops[i];
+	return NULL;
+}
+
+// values can be NULL if you want to use default value's copy
+static void op_add(Operator * op, float * values)
+{
+	void node_select_cb()
+	{
+		$_(o, elm_menu_item_object_get(elm_list_selected_item_get(nodes)));
+		Operator * op = evas_object_data_get(o, "ipu:operator");
+
+		// switch properties editing widgets to the selected's
+		if (props_current) {
+			elm_object_content_unset(props);
+			evas_object_hide(props_current);
+		}
+		props_current = op->table;
+		elm_object_content_set(props, props_current);
+
+		// set properties
+		float * values = evas_object_data_get(o, "ipu:v");
+		for (int i=0; i<op->nprop; i++)
+			elm_spinner_value_set(op->objs[i], values[i]);
+
+		// then, show it
+		evas_object_show(props_current);
+
+		execute_nodes();
+	};
+
+	$_(o, elm_menu_item_object_get(elm_list_item_append(nodes,
+			op->name, NULL, NULL, (void *)&node_select_cb, NULL)));
+
+	// setup datas needed
+	// operator
+	evas_object_data_set(o, "ipu:operator", op);
+	// values
+	if (!values) {
+		values = new(float, * op->nprop);
+		for (int i=0; i<op->nprop; i++)
+			values[i] = op->infos[i].value;
+	}
+	evas_object_data_set(o, "ipu:v", values);
 }
 
