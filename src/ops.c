@@ -35,18 +35,20 @@ void ops_register_operators()
 	});
 
 	operator("blur", ({
+		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
 		{ "radius x",	50,	0,	0xFFFF,	1,		1		},
 		{ "radius y",	0,	0,	0xFFFF,	1,		1		},
 		{ "times",		4,	0,	0xFFFF,	1,		1		},
 		{ "amplify",	60,	0,	0xFFFF,	1e-6,	1e-1	},
 	}), {
 		bool err = false;
-		int rx = v[0];
-		int ry = v[1];
-		int n  = v[2];
+		int rx = v[1];
+		int ry = v[2];
+		int n  = v[3];
+		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
 		if (rx) for (int i=0; i<n; i++) err |= ipu_blur_x(rx);
 		if (ry) for (int i=0; i<n; i++) err |= ipu_blur_y(ry);
-		if (v[3] != 1) err |= ipu_mul(v[3], v[3], v[3]);
+		if (v[4] != 1) err |= ipu_mul(v[4], v[4], v[4]);
 		return err;
 	});
 
