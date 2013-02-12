@@ -1,7 +1,7 @@
 # ipu - Image Processing Unit: An Image Synthesizer
 Licensed under GPLv2.<br>
 Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2013.<br>
-Written in `GNU C 11`, with `Enlightenment Foundation Library`.
+Written in `GNU C 11`, with `Enlightenment Foundation Library`.<br>
 **Note**: This project is in its alpha stage.
 
 <hr>
@@ -14,7 +14,7 @@ With `ipu`, you can invent image textures from scratch.
 * gnu tool cahin (I mean, **gcc** and **make**)
 * **bash** (for running configure script)
 * **pkg-config** (nearly every modern Linux has it)
-* Enlightenment Foundation Library (**EFL**) with **elementary**
+* Enlightenment Foundation Library ( **EFL** ) with **elementary**
 
 ## Have a try!
 
