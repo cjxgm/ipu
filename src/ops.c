@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <math.h>
 #include "ops.h"
 #include "ui.h"
 #include "ipu.h"
@@ -111,6 +112,15 @@ void ops_register_operators()
 		{ "y-axis' y",	-0.1,	-0xFFFF, 0xFFFF, 1e-6, 1e-1 },
 	}), {
 		return ipu_transform(v[0], v[1], v[2], v[3], v[4], v[5]);
+	});
+
+	operator("bump", ({
+		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
+	}), {
+		bool err = false;
+		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		err |= ipu_bump();
+		return err;
 	});
 }
 

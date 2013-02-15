@@ -51,6 +51,7 @@ bool ipu_dup();
 bool ipu_ignore();
 bool ipu_clamp();
 bool ipu_level(float f, float t);
+bool ipu_bump();
 
 // o[xy] is the new origin
 // x[xy] is the new x-axis, y[xy] if the new y-axis

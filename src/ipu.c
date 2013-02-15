@@ -273,6 +273,43 @@ bool ipu_level(float f, float t)
 #undef LIRP
 }
 
+bool ipu_bump()
+{
+	$_(I2, ipu_stack_pop());
+	if (!I2) return true;
+
+	$_(I, ipu_stack_top());
+	if (!I) {
+		ipu_image_free(I2);
+		return true;
+	}
+
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			float brightness_l = (ipu_at(I2, x-1, y, 0) +
+									ipu_at(I2, x-1, y, 1) +
+									ipu_at(I2, x-1, y, 2)) / 3;
+			float brightness_r = (ipu_at(I2, x+1, y, 0) +
+									ipu_at(I2, x+1, y, 1) +
+									ipu_at(I2, x+1, y, 2)) / 3;
+			float brightness_u = (ipu_at(I2, x, y-1, 0) +
+									ipu_at(I2, x, y-1, 1) +
+									ipu_at(I2, x, y-1, 2)) / 3;
+			float brightness_d = (ipu_at(I2, x, y+1, 0) +
+									ipu_at(I2, x, y+1, 1) +
+									ipu_at(I2, x, y+1, 2)) / 3;
+			float bx = (brightness_l - brightness_r + 1) / 2;
+			float by = (brightness_u - brightness_d + 1) / 2;
+			float t = sqrtf(bx*bx + by*by) * sqrtf(2);
+			ipu_at(I, x, y, 0) *= t;
+			ipu_at(I, x, y, 1) *= t;
+			ipu_at(I, x, y, 2) *= t;
+		}
+
+	return false;
+}
+
 
 bool ipu_transform(float ox, float oy, float xx, float xy, float yx, float yy)
 {
