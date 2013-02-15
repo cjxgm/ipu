@@ -110,6 +110,25 @@ bool ipu_pixel(float r, float g, float b, int npoint, int seed)
 	return false;
 }
 
+bool ipu_circle(float r, float g, float b, float ox, float oy, float radius)
+{
+	$_(I, ipu_stack_top());
+	if (!I) return true;
+
+	radius = radius * radius;
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++) {
+			float dx = x - ox;
+			float dy = y - oy;
+			if (dx*dx + dy*dy > radius) continue;
+			ipu_at(I, x, y, 0) = r;
+			ipu_at(I, x, y, 1) = g;
+			ipu_at(I, x, y, 2) = b;
+		}
+
+	return false;
+}
+
 bool ipu_blur_x(int radius)
 {
 	$_(I, ipu_stack_pop());

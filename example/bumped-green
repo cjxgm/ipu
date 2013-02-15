@@ -1,0 +1,30 @@
+color 0 0 0
+pixel 0.5 0.8 0.4 1000 1995
+blur 10 20 0 3 1
+dup 1
+blur 1 0 5 3 4
+mix-add 1
+color 0 0 0
+pixel 0.8 0.8 0.8 200 1996
+blur 1 5 5 4 60
+level 1 0.4 1 1
+mix-add 1
+scale 0.5 0.5
+move 30 0
+rotate 45
+color 0.5 0.5 0.5
+circle 1 1 1 127 127 80
+circle 0 0 0 127 127 50
+pixel 1 1 1 80 0
+pixel 0 0 0 80 2
+scale 0.5 0.5
+color 0 0 0
+pixel 1 1 1 1 0
+blur 100 200 0 1 100
+move 0 -20
+dup 1
+rotate 90
+mix-add 1
+mix-add 1
+level 1 0 1 0
+bump 1

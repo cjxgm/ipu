@@ -26,7 +26,7 @@ main()
 	gen "reconf:"
 	gen -e "\t./configure"
 	gen "test: init build/ipu"
-	gen -e "\t./build/ipu ./example/fantasy-green"
+	gen -e "\t./build/ipu ./example/bumped-green"
 	gen "commit: cleanall"
 	gen -e "\tgit add ."
 	gen -e "\tgit diff --cached"

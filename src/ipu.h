@@ -43,6 +43,7 @@ void ipu_image_free(IpuImage * I);
 
 bool ipu_color(float r, float g, float b);
 bool ipu_pixel(float r, float g, float b, int npoint, int seed);
+bool ipu_circle(float r, float g, float b, float ox, float oy, float radius);
 bool ipu_blur_x(int radius);
 bool ipu_blur_y(int radius);
 bool ipu_blur(int radius, float angle_in_degree);

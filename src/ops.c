@@ -35,6 +35,17 @@ void ops_register_operators()
 		return ipu_pixel(v[0], v[1], v[2], v[3], v[4]);
 	});
 
+	operator("circle", ({
+		{ "r",		1,		MIN,	MAX,		1e-6,	1e-2	},
+		{ "g",		1,		MIN,	MAX,		1e-6,	1e-2	},
+		{ "b",		1,		MIN,	MAX,		1e-6,	1e-2	},
+		{ "x",		127,	MIN,	MAX,		1e-2,	1		},
+		{ "y",		127,	MIN,	MAX,		1e-2,	1		},
+		{ "radius",	80,		0,		0xFFFF,		1e-2,	1		},
+	}), {
+		return ipu_circle(v[0], v[1], v[2], v[3], v[4], v[5]);
+	});
+
 	operator("blur", ({
 		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
 		{ "radius x",	50,	0,	0xFFFF,	1,		1		},
