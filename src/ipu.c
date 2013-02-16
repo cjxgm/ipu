@@ -4,6 +4,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pool.h"
+
+/***************************************************
+ *
+ * misc
+ *
+ */
+
+static Pool * _P_image;
+
+bool ipu_init()
+{
+	_P_image = pool_new(0x100);	// if this fail, let it crash the app!
+	ipu_stack_select(ipu_stack_new());	// if this fail, let it crash the app!
+	return false;
+}
+
 
 /***************************************************
  *
@@ -68,13 +85,15 @@ int ipu_stack_length()
 
 IpuImage * ipu_image_new()
 {
-	create(IpuImage, I);
+	$_(I, pool_get(_P_image));
+	if (!I) I = new(IpuImage);
 	return I;
 }
 
 void ipu_image_free(IpuImage * I)
 {
-	free(I);
+	if (pool_put(_P_image, I))	// full
+		free(I);
 }
 
 
