@@ -119,6 +119,17 @@ void ops_register_operators()
 		return err;
 	});
 
+	operator("desaturate", ({
+		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
+		{ "clamp",	0,	0,		1,		1,		1		},
+	}), {
+		bool err = ipu_desaturate();
+		bool clamp = v[1];
+		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		if (clamp) err |= ipu_clamp();
+		return err;
+	});
+
 	operator("move", ({
 		{ "x", 10, -0xFFFF, 0xFFFF, 1, 1 },
 		{ "y", 10, -0xFFFF, 0xFFFF, 1, 1 },
@@ -157,6 +168,13 @@ void ops_register_operators()
 		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
 		err |= ipu_bump();
 		return err;
+	});
+
+	operator("displace", ({
+		{ "size x",	20,	MIN,	MAX,	1e-2,	1 },
+		{ "size y",	20,	MIN,	MAX,	1e-2,	1 },
+	}), {
+		return ipu_displace(v[0], v[1]);
 	});
 }
 

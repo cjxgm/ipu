@@ -1,0 +1,9 @@
+color 0 0 0
+pixel 1 0 0 300 0
+pixel 0 1 0 300 3
+blur 1 1 10 4 60
+color 0 0 0
+pixel 1 1 1 80 0
+blur 5 10 10 3 40
+level 1 0.2 1 1
+displace 20 20

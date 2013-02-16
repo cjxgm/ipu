@@ -326,10 +326,38 @@ bool ipu_level(float f, float t)
 #undef LIRP
 }
 
+bool ipu_desaturate()
+{
+#define R_RATIO		0.2126f
+#define G_RATIO		0.7152f
+#define B_RATIO		0.0722f
+	$_(I, ipu_stack_top());
+	if (!I) return true;
+
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++)
+			ipu_at(I, x, y, 0) =
+			ipu_at(I, x, y, 1) =
+			ipu_at(I, x, y, 2) =
+					ipu_at(I, x, y, 0)*R_RATIO +
+					ipu_at(I, x, y, 1)*G_RATIO +
+					ipu_at(I, x, y, 2)*B_RATIO;
+
+	return false;
+#undef R_RATIO
+#undef G_RATIO
+#undef B_RATIO
+}
+
+
+//////////////////////////////// map
 bool ipu_bump()
 {
+	if (ipu_desaturate()) return true;
+
 	$_(I2, ipu_stack_pop());
-	if (!I2) return true;
+	if (!I2) return true;		// XXX: I think this will NEVER happen.
 
 	$_(I, ipu_stack_top());
 	if (!I) {
@@ -340,18 +368,10 @@ bool ipu_bump()
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
-			float brightness_l = (ipu_at(I2, x-1, y, 0) +
-									ipu_at(I2, x-1, y, 1) +
-									ipu_at(I2, x-1, y, 2)) / 3;
-			float brightness_r = (ipu_at(I2, x+1, y, 0) +
-									ipu_at(I2, x+1, y, 1) +
-									ipu_at(I2, x+1, y, 2)) / 3;
-			float brightness_u = (ipu_at(I2, x, y-1, 0) +
-									ipu_at(I2, x, y-1, 1) +
-									ipu_at(I2, x, y-1, 2)) / 3;
-			float brightness_d = (ipu_at(I2, x, y+1, 0) +
-									ipu_at(I2, x, y+1, 1) +
-									ipu_at(I2, x, y+1, 2)) / 3;
+			float brightness_l = ipu_at(I2, x-1, y, 0);
+			float brightness_r = ipu_at(I2, x+1, y, 0);
+			float brightness_u = ipu_at(I2, x, y-1, 0);
+			float brightness_d = ipu_at(I2, x, y+1, 0);
 			float bx = (brightness_l - brightness_r + 1) / 2;
 			float by = (brightness_u - brightness_d + 1) / 2;
 			float t = sqrtf(bx*bx + by*by) * sqrtf(2);
@@ -363,7 +383,39 @@ bool ipu_bump()
 	return false;
 }
 
+bool ipu_displace(float sx, float sy)
+{
+	if (ipu_desaturate()) return true;
 
+	$_(I2, ipu_stack_pop());
+	if (!I2) return true;		// XXX: I think this will NEVER happen.
+
+	$_(I, ipu_stack_pop());
+	if (!I) {
+		ipu_image_free(I2);
+		return true;
+	}
+
+	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
+
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			float disp = ipu_at(I2, x, y, 0)*2 - 1;
+			int dx = x + disp * sx;
+			int dy = y + disp * sy;
+			ipu_at(new_I, x, y, 0) = ipu_at(I, dx, dy, 0);
+			ipu_at(new_I, x, y, 1) = ipu_at(I, dx, dy, 1);
+			ipu_at(new_I, x, y, 2) = ipu_at(I, dx, dy, 2);
+		}
+	ipu_image_free(I);
+	ipu_stack_push(new_I);
+
+	return false;
+}
+
+
+//////////////////////////////// transform
 bool ipu_transform(float ox, float oy, float xx, float xy, float yx, float yy)
 {
 	$_(I, ipu_stack_pop());
@@ -404,6 +456,7 @@ bool ipu_rotate(float angle_in_degree)
 }
 
 
+//////////////////////////////// mix
 bool ipu_mix_add()
 {
 	$_(I2, ipu_stack_pop());
