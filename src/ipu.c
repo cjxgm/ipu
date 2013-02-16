@@ -380,6 +380,8 @@ bool ipu_bump()
 			ipu_at(I, x, y, 2) *= t;
 		}
 
+	ipu_image_free(I2);
+
 	return false;
 }
 
@@ -408,6 +410,8 @@ bool ipu_displace(float sx, float sy)
 			ipu_at(new_I, x, y, 1) = ipu_at(I, dx, dy, 1);
 			ipu_at(new_I, x, y, 2) = ipu_at(I, dx, dy, 2);
 		}
+
+	ipu_image_free(I2);
 	ipu_image_free(I);
 	ipu_stack_push(new_I);
 
@@ -476,6 +480,8 @@ bool ipu_mix_add()
 			ipu_at(I, x, y, 2) += ipu_at(I2, x, y, 2);
 		}
 
+	ipu_image_free(I2);
+
 	return false;
 }
 
@@ -497,6 +503,8 @@ bool ipu_mix_sub()
 			ipu_at(I, x, y, 1) -= ipu_at(I2, x, y, 1);
 			ipu_at(I, x, y, 2) -= ipu_at(I2, x, y, 2);
 		}
+
+	ipu_image_free(I2);
 
 	return false;
 }
@@ -520,6 +528,8 @@ bool ipu_mix_mul()
 			ipu_at(I, x, y, 2) *= ipu_at(I2, x, y, 2);
 		}
 
+	ipu_image_free(I2);
+
 	return false;
 }
 
@@ -541,6 +551,8 @@ bool ipu_mix_div()
 			ipu_at(I, x, y, 1) /= ipu_at(I2, x, y, 1);
 			ipu_at(I, x, y, 2) /= ipu_at(I2, x, y, 2);
 		}
+
+	ipu_image_free(I2);
 
 	return false;
 }
