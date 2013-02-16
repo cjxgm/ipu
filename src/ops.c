@@ -42,8 +42,9 @@ void ops_register_operators()
 		{ "x",		127,	MIN,	MAX,		1e-2,	1		},
 		{ "y",		127,	MIN,	MAX,		1e-2,	1		},
 		{ "radius",	80,		0,		0xFFFF,		1e-2,	1		},
+		{ "super sampling",	0,	0,	1,			1,		1		},
 	}), {
-		return ipu_circle(v[0], v[1], v[2], v[3], v[4], v[5]);
+		return ipu_circle(v[0], v[1], v[2], v[3], v[4], v[5], v[6]);
 	});
 
 	operator("blur", ({

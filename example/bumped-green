@@ -13,8 +13,8 @@ scale 0.5 0.5
 move 30 0
 rotate 45
 color 0.5 0.5 0.5
-circle 1 1 1 127 127 80
-circle 0 0 0 127 127 50
+circle 1 1 1 127 127 80 1
+circle 0 0 0 127 127 50 1
 pixel 1 1 1 80 0
 pixel 0 0 0 80 2
 scale 0.5 0.5

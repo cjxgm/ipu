@@ -110,21 +110,55 @@ bool ipu_pixel(float r, float g, float b, int npoint, int seed)
 	return false;
 }
 
-bool ipu_circle(float r, float g, float b, float ox, float oy, float radius)
+bool ipu_circle(float r, float g, float b, float ox, float oy,
+				float radius, bool super_sampling)
 {
 	$_(I, ipu_stack_top());
 	if (!I) return true;
 
 	radius = radius * radius;
-	for (int y=0; y<256; y++)
-		for (int x=0; x<256; x++) {
-			float dx = x - ox;
-			float dy = y - oy;
-			if (dx*dx + dy*dy > radius) continue;
-			ipu_at(I, x, y, 0) = r;
-			ipu_at(I, x, y, 1) = g;
-			ipu_at(I, x, y, 2) = b;
-		}
+	if (super_sampling)
+		for (int y=0; y<256; y++)
+			for (int x=0; x<256; x++) {
+				float alpha = 0;
+
+				void test(float offx, float offy, float ratio)
+				{
+					float dx = x - ox + offx;
+					float dy = y - oy + offy;
+					if (dx*dx + dy*dy > radius) return;
+					alpha += ratio;
+				}
+
+				test(0, 0, 1/4.0);
+				test(-0.5, 0, 1/8.0);
+				test(+0.5, 0, 1/8.0);
+				test(0, -0.5, 1/8.0);
+				test(0, +0.5, 1/8.0);
+				test(-0.5, -0.5, 1/16.0);
+				test(+0.5, -0.5, 1/16.0);
+				test(-0.5, +0.5, 1/16.0);
+				test(+0.5, +0.5, 1/16.0);
+
+				if (alpha) {
+					ipu_at(I, x, y, 0) *= 1-alpha;
+					ipu_at(I, x, y, 1) *= 1-alpha;
+					ipu_at(I, x, y, 2) *= 1-alpha;
+					ipu_at(I, x, y, 0) += r*alpha;
+					ipu_at(I, x, y, 1) += g*alpha;
+					ipu_at(I, x, y, 2) += b*alpha;
+				}
+			}
+	else
+		for (int y=0; y<256; y++)
+			for (int x=0; x<256; x++) {
+				float dx = x - ox;
+				float dy = y - oy;
+				if (dx*dx + dy*dy > radius) continue;
+				ipu_at(I, x, y, 0) = r;
+				ipu_at(I, x, y, 1) = g;
+				ipu_at(I, x, y, 2) = b;
+			}
 
 	return false;
 }
