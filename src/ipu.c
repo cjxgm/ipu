@@ -428,17 +428,68 @@ bool ipu_mix_add()
 
 bool ipu_mix_sub()
 {
-	return true;
+	$_(I2, ipu_stack_pop());
+	if (!I2) return true;
+
+	$_(I, ipu_stack_top());
+	if (!I) {
+		ipu_image_free(I2);
+		return true;
+	}
+
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			ipu_at(I, x, y, 0) -= ipu_at(I2, x, y, 0);
+			ipu_at(I, x, y, 1) -= ipu_at(I2, x, y, 1);
+			ipu_at(I, x, y, 2) -= ipu_at(I2, x, y, 2);
+		}
+
+	return false;
 }
 
 bool ipu_mix_mul()
 {
-	return true;
+	$_(I2, ipu_stack_pop());
+	if (!I2) return true;
+
+	$_(I, ipu_stack_top());
+	if (!I) {
+		ipu_image_free(I2);
+		return true;
+	}
+
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			ipu_at(I, x, y, 0) *= ipu_at(I2, x, y, 0);
+			ipu_at(I, x, y, 1) *= ipu_at(I2, x, y, 1);
+			ipu_at(I, x, y, 2) *= ipu_at(I2, x, y, 2);
+		}
+
+	return false;
 }
 
 bool ipu_mix_div()
 {
-	return true;
+	$_(I2, ipu_stack_pop());
+	if (!I2) return true;
+
+	$_(I, ipu_stack_top());
+	if (!I) {
+		ipu_image_free(I2);
+		return true;
+	}
+
+	int y, x;
+	for (y=0; y<256; y++)
+		for (x=0; x<256; x++) {
+			ipu_at(I, x, y, 0) /= ipu_at(I2, x, y, 0);
+			ipu_at(I, x, y, 1) /= ipu_at(I2, x, y, 1);
+			ipu_at(I, x, y, 2) /= ipu_at(I2, x, y, 2);
+		}
+
+	return false;
 }
 
 

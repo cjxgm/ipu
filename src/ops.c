@@ -81,6 +81,30 @@ void ops_register_operators()
 		return err;
 	});
 
+	operator("mix-sub", ({
+		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
+	}), {
+		bool err = ipu_mix_sub();
+		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		return err;
+	});
+
+	operator("mix-mul", ({
+		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
+	}), {
+		bool err = ipu_mix_mul();
+		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		return err;
+	});
+
+	operator("mix-div", ({
+		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
+	}), {
+		bool err = ipu_mix_div();
+		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		return err;
+	});
+
 	operator("level", ({
 		{ "clamp",	1,	0,		1,		1,		1		},
 		{ "from",	0,	MIN,	MAX,	1e-6,	1e-2	},
