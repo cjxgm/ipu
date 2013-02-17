@@ -29,11 +29,11 @@ void ops_register_operators()
 		{ "r", 1, MIN, MAX, 1e-6, 1e-1 },
 		{ "g", 1, MIN, MAX, 1e-6, 1e-1 },
 		{ "b", 1, MIN, MAX, 1e-6, 1e-1 },
-		{ "origin x", 0, MIN, MAX, 1e-2, 1e-1 },
-		{ "origin y", 0, MIN, MAX, 1e-2, 1e-1 },
-		{ "scale x", 3, MIN, MAX, 1e-2, 0.5 },
-		{ "scale y", 3, MIN, MAX, 1e-2, 0.5 },
-		{ "persistence", 0.25, 0, 1, 1e-3, 0.125 },
+		{ "origin x", 0, MIN, MAX, 1e-2, 1 },
+		{ "origin y", 0, MIN, MAX, 1e-2, 1 },
+		{ "scale x", 10, MIN, MAX, 1e-2, 0.5 },
+		{ "scale y", 10, MIN, MAX, 1e-2, 0.5 },
+		{ "persistence", 0.5, 0, 1, 1e-3, 0.125 },
 		{ "recursion", 4, 1, 32, 1, 1 },
 	}), {
 		return ipu_pnoise(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]);

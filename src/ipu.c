@@ -118,6 +118,7 @@ bool ipu_color(float r, float g, float b)
 bool ipu_pnoise(float r, float g, float b, float ox, float oy,
 		float sx, float sy, float persistence, int nrecursion)
 {
+	// return value ranged [-1, 1]
 	float noise(int x, int y)
 	{
 		int n = y*57 + x;
@@ -175,7 +176,7 @@ bool ipu_pnoise(float r, float g, float b, float ox, float oy,
 	$_(I, ipu_image_new());	// if this fail, let it crash the app!
 	for (int y=0; y<256; y++)
 		for (int x=0; x<256; x++) {
-			float a = pnoise(ox + x/sx, oy + y/sy);
+			float a = (pnoise(ox + x/sx, oy + y/sy) + 1) / 2;
 			ipu_at(I, x, y, 0) = r*a;
 			ipu_at(I, x, y, 1) = g*a;
 			ipu_at(I, x, y, 2) = b*a;
