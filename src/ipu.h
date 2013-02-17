@@ -72,10 +72,11 @@ bool ipu_displace(float sx, float sy);	// s = size
 // o[xy] is the new origin
 // x[xy] is the new x-axis, y[xy] if the new y-axis
 // with this function, you can do rotation, scaling(nearest), squeeze etc.
-bool ipu_transform(float ox, float oy, float xx, float xy, float yx, float yy);
-bool ipu_move(float x, float y);
-bool ipu_scale(float x, float y);
-bool ipu_rotate(float angle_in_degree);
+bool ipu_transform(float ox, float oy, float xx, float xy,
+					float yx, float yy, bool super_sampling);
+bool ipu_move(float x, float y, bool super_sampling);
+bool ipu_scale(float x, float y, bool super_sampling);
+bool ipu_rotate(float angle_in_degree, bool super_sampling);
 
 bool ipu_mix_add();
 bool ipu_mix_sub();

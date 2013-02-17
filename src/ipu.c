@@ -457,9 +457,8 @@ bool ipu_bump()
 		return true;
 	}
 
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++) {
 			float brightness_l = ipu_at(I2, x-1, y, 0);
 			float brightness_r = ipu_at(I2, x+1, y, 0);
 			float brightness_u = ipu_at(I2, x, y-1, 0);
@@ -492,9 +491,8 @@ bool ipu_displace(float sx, float sy)
 
 	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
 
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++) {
 			float disp = ipu_at(I2, x, y, 0)*2 - 1;
 			int dx = x + disp * sx;
 			int dy = y + disp * sy;
@@ -512,43 +510,73 @@ bool ipu_displace(float sx, float sy)
 
 
 //////////////////////////////// transform
-bool ipu_transform(float ox, float oy, float xx, float xy, float yx, float yy)
+bool ipu_transform(float ox, float oy, float xx, float xy,
+					float yx, float yy, bool super_sampling)
 {
 	$_(I, ipu_stack_pop());
 	if (!I) return true;
 
 	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
 
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			int nx = ox + xx*x + yx*y;
-			int ny = oy + xy*x + yy*y;
-			ipu_at(new_I, x, y, 0) = ipu_at(I, nx, ny, 0);
-			ipu_at(new_I, x, y, 1) = ipu_at(I, nx, ny, 1);
-			ipu_at(new_I, x, y, 2) = ipu_at(I, nx, ny, 2);
-		}
+	if (super_sampling)
+		for (int y=0; y<256; y++)
+			for (int x=0; x<256; x++) {
+				float color[] = {0, 0, 0};
+
+				inline void sample(float tx, float ty, float ratio)
+				{
+					int nx = ox + xx*tx + yx*ty;
+					int ny = oy + xy*tx + yy*ty;
+					color[0] += ipu_at(I, nx, ny, 0) * ratio;
+					color[1] += ipu_at(I, nx, ny, 1) * ratio;
+					color[2] += ipu_at(I, nx, ny, 2) * ratio;
+				}
+
+				sample(x, y, 1.0/4.0);
+				sample(x-0.5, y, 1.0/8.0);
+				sample(x+0.5, y, 1.0/8.0);
+				sample(x, y-0.5, 1.0/8.0);
+				sample(x, y+0.5, 1.0/8.0);
+				sample(x-0.5, y-0.5, 1.0/16.0);
+				sample(x+0.5, y-0.5, 1.0/16.0);
+				sample(x-0.5, y+0.5, 1.0/16.0);
+				sample(x+0.5, y+0.5, 1.0/16.0);
+
+				ipu_at(new_I, x, y, 0) = color[0];
+				ipu_at(new_I, x, y, 1) = color[1];
+				ipu_at(new_I, x, y, 2) = color[2];
+			}
+	else
+		for (int y=0; y<256; y++)
+			for (int x=0; x<256; x++) {
+				int nx = ox + xx*x + yx*y;
+				int ny = oy + xy*x + yy*y;
+				ipu_at(new_I, x, y, 0) = ipu_at(I, nx, ny, 0);
+				ipu_at(new_I, x, y, 1) = ipu_at(I, nx, ny, 1);
+				ipu_at(new_I, x, y, 2) = ipu_at(I, nx, ny, 2);
+			}
+
 	ipu_image_free(I);
 	ipu_stack_push(new_I);
 
 	return false;
 }
 
-bool ipu_move(float x, float y)
+bool ipu_move(float x, float y, bool super_sampling)
 {
-	return ipu_transform(-x, -y, 1, 0, 0, 1);
+	return ipu_transform(-x, -y, 1, 0, 0, 1, super_sampling);
 }
 
-bool ipu_scale(float x, float y)
+bool ipu_scale(float x, float y, bool super_sampling)
 {
-	return ipu_transform(0, 0, 1/x, 0, 0, 1/y);
+	return ipu_transform(0, 0, 1/x, 0, 0, 1/y, super_sampling);
 }
 
-bool ipu_rotate(float angle_in_degree)
+bool ipu_rotate(float angle_in_degree, bool super_sampling)
 {
 	float c = cos(angle_in_degree * M_PI / 180);
 	float s = sin(angle_in_degree * M_PI / 180);
-	return ipu_transform(0, 0, c, -s, s, c);
+	return ipu_transform(0, 0, c, -s, s, c, super_sampling);
 }
 
 

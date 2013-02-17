@@ -145,23 +145,26 @@ void ops_register_operators()
 	});
 
 	operator("move", ({
-		{ "x", 10, -0xFFFF, 0xFFFF, 1, 1 },
-		{ "y", 10, -0xFFFF, 0xFFFF, 1, 1 },
+		{ "x", 10, -0xFFFF, 0xFFFF, 1e-2, 0.5 },
+		{ "y", 10, -0xFFFF, 0xFFFF, 1e-2, 0.5 },
+		{ "super sampling",	0, 0, 1, 1, 1 },
 	}), {
-		return ipu_move(v[0], v[1]);
+		return ipu_move(v[0], v[1], v[2]);
 	});
 
 	operator("scale", ({
 		{ "x", 0.5, -0xFFFF, 0xFFFF, 1e-6, 1e-1 },
 		{ "y", 0.5, -0xFFFF, 0xFFFF, 1e-6, 1e-1 },
+		{ "super sampling",	0, 0, 1, 1, 1 },
 	}), {
-		return ipu_scale(v[0], v[1]);
+		return ipu_scale(v[0], v[1], v[2]);
 	});
 
 	operator("rotate", ({
 		{ "angle", 45, -0xFFFF, 0xFFFF, 1e-6, 1e-1 },
+		{ "super sampling",	0, 0, 1, 1, 1 },
 	}), {
-		return ipu_rotate(v[0]);
+		return ipu_rotate(v[0], v[2]);
 	});
 
 	operator("transform", ({
@@ -171,8 +174,9 @@ void ops_register_operators()
 		{ "x-axis' y",	-0.2,	-0xFFFF, 0xFFFF, 1e-6, 1e-1 },
 		{ "y-axis' x",	0.7,	-0xFFFF, 0xFFFF, 1e-6, 1e-1 },
 		{ "y-axis' y",	-0.1,	-0xFFFF, 0xFFFF, 1e-6, 1e-1 },
+		{ "super sampling",	0, 0, 1, 1, 1 },
 	}), {
-		return ipu_transform(v[0], v[1], v[2], v[3], v[4], v[5]);
+		return ipu_transform(v[0], v[1], v[2], v[3], v[4], v[5], v[6]);
 	});
 
 	operator("bump", ({
