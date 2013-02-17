@@ -112,6 +112,79 @@ bool ipu_color(float r, float g, float b)
 	return false;
 }
 
+// perlin noise
+// see: http://freespace.virgin.net/hugo.elias/models/m_perlin.htm
+// s[xy] = scale of [xy]
+bool ipu_pnoise(float r, float g, float b, float ox, float oy,
+		float sx, float sy, float persistence, int nrecursion)
+{
+	float noise(int x, int y)
+	{
+		int n = y*57 + x;
+		n = (n<<13) ^ n;
+		return (1.0 - (((n*n*15731 + 789221)*n +
+						1376312589) & 0x7fffffff) / 1073741824.0); 
+	}
+
+	// super-sampling noise
+	float ssnoise(float x, float y)
+	{
+		float n = noise(x, y) / 4.0;
+		n += (noise(x-1, y) +
+				noise(x+1, y) +
+				noise(x, y-1) +
+				noise(x, y+1)) / 8.0;
+		n += (noise(x-1, y-1) +
+				noise(x+1, y-1) +
+				noise(x-1, y+1) +
+				noise(x+1, y+1)) / 16.0;
+		return n;
+	}
+
+	// cosine interpolation
+	inline float interpolate(float a, float b, float t)
+	{
+		float f = (1 - cosf(t * M_PI)) * 0.5;
+		return a*(1-f) + b*f;
+	}
+
+	// interpolated noise
+	inline float inoise(float x, float y)
+	{
+		int   ix = x;			// integer    part of x
+		float fx = x - ix;		// fractional part of x
+		int   iy = y;			// integer    part of y
+		float fy = y - iy;		// fractional part of y
+		float n1 = interpolate(ssnoise(ix, iy  ), ssnoise(ix+1, iy  ), fx);
+		float n2 = interpolate(ssnoise(ix, iy+1), ssnoise(ix+1, iy+1), fx);
+		return interpolate(n1, n2, fy);
+	}
+
+	// perlin noise
+	inline float pnoise(float x, float y)
+	{
+		float n = 0;
+		for (int i=0; i<nrecursion; i++) {
+			float f = powf(2, i);
+			float a = powf(persistence, i);
+			n += a * inoise(x*f, y*f);
+		}
+		return n;
+	}
+
+	$_(I, ipu_image_new());	// if this fail, let it crash the app!
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++) {
+			float a = pnoise(ox + x/sx, oy + y/sy);
+			ipu_at(I, x, y, 0) = r*a;
+			ipu_at(I, x, y, 1) = g*a;
+			ipu_at(I, x, y, 2) = b*a;
+		}
+	ipu_stack_push(I);
+
+	return false;
+}
+
 bool ipu_pixel(float r, float g, float b, int npoint, int seed)
 {
 	$_(I, ipu_stack_top());

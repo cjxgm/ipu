@@ -50,6 +50,8 @@ IpuImage * ipu_image_new();
 void ipu_image_free(IpuImage * I);
 
 bool ipu_color(float r, float g, float b);
+bool ipu_pnoise(float r, float g, float b, float ox, float oy,
+		float sx, float sy, float persistence, int nrecursion);
 bool ipu_pixel(float r, float g, float b, int npoint, int seed);
 bool ipu_circle(float r, float g, float b, float ox, float oy,
 				float radius, bool super_sampling);

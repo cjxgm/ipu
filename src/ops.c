@@ -18,17 +18,31 @@
 void ops_register_operators()
 {
 	operator("color", ({ 
-		{ "r", 0, MIN, MAX, 1e-6, 1e-2 },
-		{ "g", 0, MIN, MAX, 1e-6, 1e-2 },
-		{ "b", 0, MIN, MAX, 1e-6, 1e-2 },
+		{ "r", 0, MIN, MAX, 1e-6, 1e-1 },
+		{ "g", 0, MIN, MAX, 1e-6, 1e-1 },
+		{ "b", 0, MIN, MAX, 1e-6, 1e-1 },
 	}), {
 		return ipu_color(v[0], v[1], v[2]);
 	});
 
+	operator("perlin-noise", ({ 
+		{ "r", 1, MIN, MAX, 1e-6, 1e-1 },
+		{ "g", 1, MIN, MAX, 1e-6, 1e-1 },
+		{ "b", 1, MIN, MAX, 1e-6, 1e-1 },
+		{ "origin x", 0, MIN, MAX, 1e-2, 1e-1 },
+		{ "origin y", 0, MIN, MAX, 1e-2, 1e-1 },
+		{ "scale x", 3, MIN, MAX, 1e-2, 0.5 },
+		{ "scale y", 3, MIN, MAX, 1e-2, 0.5 },
+		{ "persistence", 0.25, 0, 1, 1e-3, 0.125 },
+		{ "recursion", 4, 1, 32, 1, 1 },
+	}), {
+		return ipu_pnoise(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]);
+	});
+
 	operator("pixel", ({
-		{ "r",		1,	MIN,	MAX,		1e-6,	1e-2	},
-		{ "g",		1,	MIN,	MAX,		1e-6,	1e-2	},
-		{ "b",		1,	MIN,	MAX,		1e-6,	1e-2	},
+		{ "r",		1,	MIN,	MAX,		1e-6,	1e-1	},
+		{ "g",		1,	MIN,	MAX,		1e-6,	1e-1	},
+		{ "b",		1,	MIN,	MAX,		1e-6,	1e-1	},
 		{ "amount",	80,	0,		0xFFFF,		1,		1		},
 		{ "seed",	0,	0,		0xFFFFFFFF,	1,		1		},
 	}), {
@@ -36,9 +50,9 @@ void ops_register_operators()
 	});
 
 	operator("circle", ({
-		{ "r",		1,		MIN,	MAX,		1e-6,	1e-2	},
-		{ "g",		1,		MIN,	MAX,		1e-6,	1e-2	},
-		{ "b",		1,		MIN,	MAX,		1e-6,	1e-2	},
+		{ "r",		1,		MIN,	MAX,		1e-6,	1e-1	},
+		{ "g",		1,		MIN,	MAX,		1e-6,	1e-1	},
+		{ "b",		1,		MIN,	MAX,		1e-6,	1e-1	},
 		{ "x",		127,	MIN,	MAX,		1e-2,	1		},
 		{ "y",		127,	MIN,	MAX,		1e-2,	1		},
 		{ "radius",	80,		0,		0xFFFF,		1e-2,	1		},
@@ -107,8 +121,8 @@ void ops_register_operators()
 
 	operator("level", ({
 		{ "clamp",	1,	0,		1,		1,		1		},
-		{ "from",	0,	MIN,	MAX,	1e-6,	1e-2	},
-		{ "to",		1,	MIN,	MAX,	1e-6,	1e-2	},
+		{ "from",	0,	MIN,	MAX,	1e-6,	1e-1	},
+		{ "to",		1,	MIN,	MAX,	1e-6,	1e-1	},
 		{ "clamp",	0,	0,		1,		1,		1		},
 	}), {
 		bool err = false;

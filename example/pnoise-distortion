@@ -1,0 +1,6 @@
+color 0 0 0
+pixel 0.5 1 0 500 3
+blur 1 0 50 4 60
+perlin-noise 1 1 1 20 20 30 30 0.25 4
+level 1 0 0.4 1
+displace 20 20
