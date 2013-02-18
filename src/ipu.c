@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "pool.h"
+#include "fast_rand.h"
 
 /***************************************************
  *
@@ -119,12 +120,10 @@ bool ipu_pnoise(float r, float g, float b, float ox, float oy,
 		float sx, float sy, float persistence, int nrecursion)
 {
 	// return value ranged [-1, 1]
-	float noise(int x, int y)
+	inline float noise(int x, int y)
 	{
 		int n = y*57 + x;
-		n = (n<<13) ^ n;
-		return (1.0 - (((n*n*15731 + 789221)*n +
-						1376312589) & 0x7fffffff) / 1073741824.0); 
+		return fast_randf_at(n);
 	}
 
 	// super-sampling noise
@@ -189,6 +188,7 @@ bool ipu_pixel(float r, float g, float b, int npoint, int seed)
 	$_(I, ipu_stack_top());
 	if (!I) return true;
 
+	// I use the "slow" builtin random number generator for quality.
 	srand(seed);
 	v4 color = {r, g, b};
 	while (npoint--) {
