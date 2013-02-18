@@ -11,6 +11,9 @@
  *
  */
 
+// simd vector
+typedef float v4 __attribute__((vector_size(sizeof(float)*4)));
+
 bool ipu_init();
 
 /***************************************************
@@ -23,7 +26,7 @@ typedef Pack IpuStack;
 
 typedef struct IpuImage
 {
-	float data[256*256*3];
+	v4 data[256*256];
 }
 IpuImage;
 
@@ -43,8 +46,8 @@ int ipu_stack_length();
  *
  */
 
-#define ipu_at(I, x, y, idx) \
-	((I)->data[((((y) & 0xFF)<<8) | ((x) & 0xFF)) * 3 + (idx)])
+#define ipu_at(I, x, y) \
+	((I)->data[(((y) & 0xFF)<<8) | ((x) & 0xFF)])
 
 IpuImage * ipu_image_new();
 void ipu_image_free(IpuImage * I);
@@ -57,8 +60,7 @@ bool ipu_circle(float r, float g, float b, float ox, float oy,
 				float radius, bool super_sampling);
 bool ipu_blur_x(int radius);
 bool ipu_blur_y(int radius);
-bool ipu_blur(int radius, float angle_in_degree);
-bool ipu_mul(float r, float g, float b);
+bool ipu_mul(float t);
 bool ipu_dup();
 bool ipu_ignore();
 bool ipu_clamp();

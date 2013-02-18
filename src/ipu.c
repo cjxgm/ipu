@@ -86,7 +86,10 @@ int ipu_stack_length()
 IpuImage * ipu_image_new()
 {
 	$_(I, pool_get(_P_image));
-	if (!I) I = new(IpuImage);
+	// here, "valloc" is a must, because it guarantees that the
+	// returned pointer is correctly aligned, while "malloc" doesn't.
+	// And all the SIMD instructions need the alignment.
+	if (!I) I = valloc(sizeof(IpuImage));
 	return I;
 }
 
@@ -100,13 +103,10 @@ void ipu_image_free(IpuImage * I)
 bool ipu_color(float r, float g, float b)
 {
 	$_(I, ipu_image_new());	// if this fail, let it crash the app!
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			ipu_at(I, x, y, 0) = r;
-			ipu_at(I, x, y, 1) = g;
-			ipu_at(I, x, y, 2) = b;
-		}
+	v4 color = {r, g, b};
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++)
+			ipu_at(I, x, y) = color;
 	ipu_stack_push(I);
 
 	return false;
@@ -174,13 +174,11 @@ bool ipu_pnoise(float r, float g, float b, float ox, float oy,
 	}
 
 	$_(I, ipu_image_new());	// if this fail, let it crash the app!
+	v4 color = {r, g, b};
 	for (int y=0; y<256; y++)
-		for (int x=0; x<256; x++) {
-			float a = (pnoise(ox + x/sx, oy + y/sy) + 1) / 2;
-			ipu_at(I, x, y, 0) = r*a;
-			ipu_at(I, x, y, 1) = g*a;
-			ipu_at(I, x, y, 2) = b*a;
-		}
+		for (int x=0; x<256; x++)
+			ipu_at(I, x, y) = color *
+							((pnoise(ox + x/sx, oy + y/sy) + 1) / 2);
 	ipu_stack_push(I);
 
 	return false;
@@ -192,12 +190,11 @@ bool ipu_pixel(float r, float g, float b, int npoint, int seed)
 	if (!I) return true;
 
 	srand(seed);
+	v4 color = {r, g, b};
 	while (npoint--) {
 		int x = rand();
 		int y = rand();
-		ipu_at(I, x, y, 0) = r;
-		ipu_at(I, x, y, 1) = g;
-		ipu_at(I, x, y, 2) = b;
+		ipu_at(I, x, y) = color;
 	}
 
 	return false;
@@ -210,6 +207,7 @@ bool ipu_circle(float r, float g, float b, float ox, float oy,
 	if (!I) return true;
 
 	radius = radius * radius;
+	v4 color = {r, g, b};
 	if (super_sampling)
 		for (int y=0; y<256; y++)
 			for (int x=0; x<256; x++) {
@@ -234,12 +232,8 @@ bool ipu_circle(float r, float g, float b, float ox, float oy,
 				test(+0.5, +0.5, 1/16.0);
 
 				if (alpha) {
-					ipu_at(I, x, y, 0) *= 1-alpha;
-					ipu_at(I, x, y, 1) *= 1-alpha;
-					ipu_at(I, x, y, 2) *= 1-alpha;
-					ipu_at(I, x, y, 0) += r*alpha;
-					ipu_at(I, x, y, 1) += g*alpha;
-					ipu_at(I, x, y, 2) += b*alpha;
+					ipu_at(I, x, y) *= 1-alpha;
+					ipu_at(I, x, y) += color*alpha;
 				}
 			}
 	else
@@ -248,9 +242,7 @@ bool ipu_circle(float r, float g, float b, float ox, float oy,
 				float dx = x - ox;
 				float dy = y - oy;
 				if (dx*dx + dy*dy > radius) continue;
-				ipu_at(I, x, y, 0) = r;
-				ipu_at(I, x, y, 1) = g;
-				ipu_at(I, x, y, 2) = b;
+				ipu_at(I, x, y) = color;
 			}
 
 	return false;
@@ -262,28 +254,18 @@ bool ipu_blur_x(int radius)
 	if (!I) return true;
 
 	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
-	int y, x;
-	for (y=0; y<256; y++) {
-		float color[4] = {0, 0, 0, radius*2+1};
-		for (x=-radius; x<=radius; x++) {
-			color[0] += ipu_at(I, x, y, 0);
-			color[1] += ipu_at(I, x, y, 1);
-			color[2] += ipu_at(I, x, y, 2);
-		}
-		ipu_at(new_I, 0, y, 0) = color[0] / color[3];
-		ipu_at(new_I, 0, y, 1) = color[1] / color[3];
-		ipu_at(new_I, 0, y, 2) = color[2] / color[3];
-		for (x=1; x<256; x++) {
-			ipu_at(new_I, x, y, 0) = ipu_at(new_I, x-1, y, 0) +
-				(ipu_at(I, x+radius, y, 0) -
-				 ipu_at(I, x-radius-1, y, 0)) / color[3];
-			ipu_at(new_I, x, y, 1) = ipu_at(new_I, x-1, y, 1) +
-				(ipu_at(I, x+radius, y, 1) -
-				 ipu_at(I, x-radius-1, y, 1)) / color[3];
-			ipu_at(new_I, x, y, 2) = ipu_at(new_I, x-1, y, 2) +
-				(ipu_at(I, x+radius, y, 2) -
-				 ipu_at(I, x-radius-1, y, 2)) / color[3];
-		}
+
+	float size = radius*2+1;
+	for (int y=0; y<256; y++) {
+		v4 color = {0, 0, 0};
+
+		for (int x=-radius; x<=radius; x++)
+			color += ipu_at(I, x, y);
+
+		ipu_at(new_I, 0, y) = color / size;
+		for (int x=1; x<256; x++)
+			ipu_at(new_I, x, y) = ipu_at(new_I, x-1, y) +
+				(ipu_at(I, x+radius, y) - ipu_at(I, x-radius-1, y)) / size;
 	}
 	ipu_image_free(I);
 	ipu_stack_push(new_I);
@@ -298,28 +280,17 @@ bool ipu_blur_y(int radius)
 
 	$_(new_I, ipu_image_new());	// if this fail, let it crash the app!
 
-	int y, x;
-	for (x=0; x<256; x++) {
-		float color[4] = {0, 0, 0, radius*2+1};
-		for (y=-radius; y<=radius; y++) {
-			color[0] += ipu_at(I, x, y, 0);
-			color[1] += ipu_at(I, x, y, 1);
-			color[2] += ipu_at(I, x, y, 2);
-		}
-		ipu_at(new_I, x, 0, 0) = color[0] / color[3];
-		ipu_at(new_I, x, 0, 1) = color[1] / color[3];
-		ipu_at(new_I, x, 0, 2) = color[2] / color[3];
-		for (y=1; y<256; y++) {
-			ipu_at(new_I, x, y, 0) = ipu_at(new_I, x, y-1, 0) +
-				(ipu_at(I, x, y+radius, 0) -
-				 ipu_at(I, x, y-radius-1, 0)) / color[3];
-			ipu_at(new_I, x, y, 1) = ipu_at(new_I, x, y-1, 1) +
-				(ipu_at(I, x, y+radius, 1) -
-				 ipu_at(I, x, y-radius-1, 1)) / color[3];
-			ipu_at(new_I, x, y, 2) = ipu_at(new_I, x, y-1, 2) +
-				(ipu_at(I, x, y+radius, 2) -
-				 ipu_at(I, x, y-radius-1, 2)) / color[3];
-		}
+	float size = radius*2+1;
+	for (int x=0; x<256; x++) {
+		v4 color = {0, 0, 0};
+
+		for (int y=-radius; y<=radius; y++)
+			color += ipu_at(I, x, y);
+
+		ipu_at(new_I, x, 0) = color / size;
+		for (int y=1; y<256; y++)
+			ipu_at(new_I, x, y) = ipu_at(new_I, x, y-1) +
+				(ipu_at(I, x, y+radius) - ipu_at(I, x, y-radius-1)) / size;
 	}
 	ipu_image_free(I);
 	ipu_stack_push(new_I);
@@ -327,24 +298,14 @@ bool ipu_blur_y(int radius)
 	return false;
 }
 
-bool ipu_blur(int radius, float angle_in_degree)
-{
-	return ipu_blur_x(radius * cos(angle_in_degree * M_PI / 180)) ||
-			ipu_blur_y(radius * sin(angle_in_degree * M_PI / 180));
-}
-
-bool ipu_mul(float r, float g, float b)
+bool ipu_mul(float t)
 {
 	$_(I, ipu_stack_top());
 	if (!I) return true;
 
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			ipu_at(I, x, y, 0) *= r;
-			ipu_at(I, x, y, 1) *= g;
-			ipu_at(I, x, y, 2) *= b;
-		}
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++)
+			ipu_at(I, x, y) *= t;
 
 	return false;
 }
@@ -385,9 +346,9 @@ bool ipu_clamp()
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
-			ipu_at(I, x, y, 0) = CLAMP(ipu_at(I, x, y, 0), 0, 1);
-			ipu_at(I, x, y, 1) = CLAMP(ipu_at(I, x, y, 1), 0, 1);
-			ipu_at(I, x, y, 2) = CLAMP(ipu_at(I, x, y, 2), 0, 1);
+			ipu_at(I, x, y)[0] = CLAMP(ipu_at(I, x, y)[0], 0, 1);
+			ipu_at(I, x, y)[1] = CLAMP(ipu_at(I, x, y)[1], 0, 1);
+			ipu_at(I, x, y)[2] = CLAMP(ipu_at(I, x, y)[2], 0, 1);
 		}
 
 	return false;
@@ -410,9 +371,9 @@ bool ipu_level(float f, float t)
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
-			ipu_at(I, x, y, 0) = LIRP(ipu_at(I, x, y, 0), f, t, 0, 1);
-			ipu_at(I, x, y, 1) = LIRP(ipu_at(I, x, y, 1), f, t, 0, 1);
-			ipu_at(I, x, y, 2) = LIRP(ipu_at(I, x, y, 2), f, t, 0, 1);
+			ipu_at(I, x, y)[0] = LIRP(ipu_at(I, x, y)[0], f, t, 0, 1);
+			ipu_at(I, x, y)[1] = LIRP(ipu_at(I, x, y)[1], f, t, 0, 1);
+			ipu_at(I, x, y)[2] = LIRP(ipu_at(I, x, y)[2], f, t, 0, 1);
 		}
 
 	return false;
@@ -430,12 +391,12 @@ bool ipu_desaturate()
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++)
-			ipu_at(I, x, y, 0) =
-			ipu_at(I, x, y, 1) =
-			ipu_at(I, x, y, 2) =
-					ipu_at(I, x, y, 0)*R_RATIO +
-					ipu_at(I, x, y, 1)*G_RATIO +
-					ipu_at(I, x, y, 2)*B_RATIO;
+			ipu_at(I, x, y)[0] =
+			ipu_at(I, x, y)[1] =
+			ipu_at(I, x, y)[2] =
+					ipu_at(I, x, y)[0]*R_RATIO +
+					ipu_at(I, x, y)[1]*G_RATIO +
+					ipu_at(I, x, y)[2]*B_RATIO;
 
 	return false;
 #undef R_RATIO
@@ -460,16 +421,14 @@ bool ipu_bump()
 
 	for (int y=0; y<256; y++)
 		for (int x=0; x<256; x++) {
-			float brightness_l = ipu_at(I2, x-1, y, 0);
-			float brightness_r = ipu_at(I2, x+1, y, 0);
-			float brightness_u = ipu_at(I2, x, y-1, 0);
-			float brightness_d = ipu_at(I2, x, y+1, 0);
+			float brightness_l = ipu_at(I2, x-1, y)[0];
+			float brightness_r = ipu_at(I2, x+1, y)[0];
+			float brightness_u = ipu_at(I2, x, y-1)[0];
+			float brightness_d = ipu_at(I2, x, y+1)[0];
 			float bx = (brightness_l - brightness_r + 1) / 2;
 			float by = (brightness_u - brightness_d + 1) / 2;
 			float t = sqrtf(bx*bx + by*by) * sqrtf(2);
-			ipu_at(I, x, y, 0) *= t;
-			ipu_at(I, x, y, 1) *= t;
-			ipu_at(I, x, y, 2) *= t;
+			ipu_at(I, x, y) *= t;
 		}
 
 	ipu_image_free(I2);
@@ -494,12 +453,10 @@ bool ipu_displace(float sx, float sy)
 
 	for (int y=0; y<256; y++)
 		for (int x=0; x<256; x++) {
-			float disp = ipu_at(I2, x, y, 0)*2 - 1;
+			float disp = ipu_at(I2, x, y)[0]*2 - 1;
 			int dx = x + disp * sx;
 			int dy = y + disp * sy;
-			ipu_at(new_I, x, y, 0) = ipu_at(I, dx, dy, 0);
-			ipu_at(new_I, x, y, 1) = ipu_at(I, dx, dy, 1);
-			ipu_at(new_I, x, y, 2) = ipu_at(I, dx, dy, 2);
+			ipu_at(new_I, x, y) = ipu_at(I, dx, dy);
 		}
 
 	ipu_image_free(I2);
@@ -522,15 +479,13 @@ bool ipu_transform(float ox, float oy, float xx, float xy,
 	if (super_sampling)
 		for (int y=0; y<256; y++)
 			for (int x=0; x<256; x++) {
-				float color[] = {0, 0, 0};
+				v4 color = {0, 0, 0};
 
 				inline void sample(float tx, float ty, float ratio)
 				{
 					int nx = ox + xx*tx + yx*ty;
 					int ny = oy + xy*tx + yy*ty;
-					color[0] += ipu_at(I, nx, ny, 0) * ratio;
-					color[1] += ipu_at(I, nx, ny, 1) * ratio;
-					color[2] += ipu_at(I, nx, ny, 2) * ratio;
+					color += ipu_at(I, nx, ny) * ratio;
 				}
 
 				sample(x, y, 1.0/4.0);
@@ -543,18 +498,14 @@ bool ipu_transform(float ox, float oy, float xx, float xy,
 				sample(x-0.5, y+0.5, 1.0/16.0);
 				sample(x+0.5, y+0.5, 1.0/16.0);
 
-				ipu_at(new_I, x, y, 0) = color[0];
-				ipu_at(new_I, x, y, 1) = color[1];
-				ipu_at(new_I, x, y, 2) = color[2];
+				ipu_at(new_I, x, y) = color;
 			}
 	else
 		for (int y=0; y<256; y++)
 			for (int x=0; x<256; x++) {
 				int nx = ox + xx*x + yx*y;
 				int ny = oy + xy*x + yy*y;
-				ipu_at(new_I, x, y, 0) = ipu_at(I, nx, ny, 0);
-				ipu_at(new_I, x, y, 1) = ipu_at(I, nx, ny, 1);
-				ipu_at(new_I, x, y, 2) = ipu_at(I, nx, ny, 2);
+				ipu_at(new_I, x, y) = ipu_at(I, nx, ny);
 			}
 
 	ipu_image_free(I);
@@ -593,13 +544,9 @@ bool ipu_mix_add()
 		return true;
 	}
 
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			ipu_at(I, x, y, 0) += ipu_at(I2, x, y, 0);
-			ipu_at(I, x, y, 1) += ipu_at(I2, x, y, 1);
-			ipu_at(I, x, y, 2) += ipu_at(I2, x, y, 2);
-		}
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++)
+			ipu_at(I, x, y) += ipu_at(I2, x, y);
 
 	ipu_image_free(I2);
 
@@ -617,13 +564,9 @@ bool ipu_mix_sub()
 		return true;
 	}
 
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			ipu_at(I, x, y, 0) -= ipu_at(I2, x, y, 0);
-			ipu_at(I, x, y, 1) -= ipu_at(I2, x, y, 1);
-			ipu_at(I, x, y, 2) -= ipu_at(I2, x, y, 2);
-		}
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++)
+			ipu_at(I, x, y) -= ipu_at(I2, x, y);
 
 	ipu_image_free(I2);
 
@@ -641,13 +584,9 @@ bool ipu_mix_mul()
 		return true;
 	}
 
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			ipu_at(I, x, y, 0) *= ipu_at(I2, x, y, 0);
-			ipu_at(I, x, y, 1) *= ipu_at(I2, x, y, 1);
-			ipu_at(I, x, y, 2) *= ipu_at(I2, x, y, 2);
-		}
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++)
+			ipu_at(I, x, y) *= ipu_at(I2, x, y);
 
 	ipu_image_free(I2);
 
@@ -665,13 +604,9 @@ bool ipu_mix_div()
 		return true;
 	}
 
-	int y, x;
-	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			ipu_at(I, x, y, 0) /= ipu_at(I2, x, y, 0);
-			ipu_at(I, x, y, 1) /= ipu_at(I2, x, y, 1);
-			ipu_at(I, x, y, 2) /= ipu_at(I2, x, y, 2);
-		}
+	for (int y=0; y<256; y++)
+		for (int x=0; x<256; x++)
+			ipu_at(I, x, y) /= ipu_at(I2, x, y);
 
 	ipu_image_free(I2);
 
@@ -700,9 +635,9 @@ unsigned char * ipu_ppm_get(size_t * size)
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++) {
-			ppm[3+8+4 + ((y<<8)|x)*3 + 0] = ipu_at(I, x, y, 0) * 255;
-			ppm[3+8+4 + ((y<<8)|x)*3 + 1] = ipu_at(I, x, y, 1) * 255;
-			ppm[3+8+4 + ((y<<8)|x)*3 + 2] = ipu_at(I, x, y, 2) * 255;
+			ppm[3+8+4 + ((y<<8)|x)*3 + 0] = ipu_at(I, x, y)[0] * 255;
+			ppm[3+8+4 + ((y<<8)|x)*3 + 1] = ipu_at(I, x, y)[1] * 255;
+			ppm[3+8+4 + ((y<<8)|x)*3 + 2] = ipu_at(I, x, y)[2] * 255;
 		}
 
 	ipu_image_free(I);

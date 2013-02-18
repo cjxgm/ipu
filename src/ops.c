@@ -72,10 +72,10 @@ void ops_register_operators()
 		int rx = v[1];
 		int ry = v[2];
 		int n  = v[3];
-		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		if (v[0] != 1) err |= ipu_mul(v[0]);
 		if (rx) for (int i=0; i<n; i++) err |= ipu_blur_x(rx);
 		if (ry) for (int i=0; i<n; i++) err |= ipu_blur_y(ry);
-		if (v[4] != 1) err |= ipu_mul(v[4], v[4], v[4]);
+		if (v[4] != 1) err |= ipu_mul(v[4]);
 		return err;
 	});
 
@@ -83,7 +83,7 @@ void ops_register_operators()
 		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
 	}), {
 		bool err = ipu_dup();
-		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		if (v[0] != 1) err |= ipu_mul(v[0]);
 		return err;
 	});
 
@@ -91,7 +91,7 @@ void ops_register_operators()
 		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
 	}), {
 		bool err = ipu_mix_add();
-		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		if (v[0] != 1) err |= ipu_mul(v[0]);
 		return err;
 	});
 
@@ -99,7 +99,7 @@ void ops_register_operators()
 		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
 	}), {
 		bool err = ipu_mix_sub();
-		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		if (v[0] != 1) err |= ipu_mul(v[0]);
 		return err;
 	});
 
@@ -107,7 +107,7 @@ void ops_register_operators()
 		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
 	}), {
 		bool err = ipu_mix_mul();
-		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		if (v[0] != 1) err |= ipu_mul(v[0]);
 		return err;
 	});
 
@@ -115,7 +115,7 @@ void ops_register_operators()
 		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
 	}), {
 		bool err = ipu_mix_div();
-		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		if (v[0] != 1) err |= ipu_mul(v[0]);
 		return err;
 	});
 
@@ -139,7 +139,7 @@ void ops_register_operators()
 	}), {
 		bool err = ipu_desaturate();
 		bool clamp = v[1];
-		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		if (v[0] != 1) err |= ipu_mul(v[0]);
 		if (clamp) err |= ipu_clamp();
 		return err;
 	});
@@ -183,7 +183,7 @@ void ops_register_operators()
 		{ "amplify",	1,	0,	0xFFFF,	1e-6,	1e-1	},
 	}), {
 		bool err = false;
-		if (v[0] != 1) err |= ipu_mul(v[0], v[0], v[0]);
+		if (v[0] != 1) err |= ipu_mul(v[0]);
 		err |= ipu_bump();
 		return err;
 	});
