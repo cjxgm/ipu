@@ -6,6 +6,7 @@
 #include <string.h>
 #include "pool.h"
 #include "fast_rand.h"
+#include "vector.h"
 
 /***************************************************
  *
@@ -335,10 +336,10 @@ bool ipu_ignore()
 bool ipu_clamp()
 {
 #define CLAMP(v, f, t) ({ \
-	typeof(v) __$v = (v); \
-	typeof(f) __$f = (f); \
-	typeof(t) __$t = (t); \
-	(__$v < __$f ? __$f : (__$v > __$t ? __$t : __$v)); \
+	$_($v$, (v)); \
+	$_($f$, (f)); \
+	$_($t$, (t)); \
+	($v$ < $f$ ? $f$ : ($v$ > $t$ ? $t$ : $v$)); \
 })
 	$_(I, ipu_stack_top());
 	if (!I) return true;
@@ -358,23 +359,20 @@ bool ipu_clamp()
 bool ipu_level(float f, float t)
 {
 #define LIRP(v, f, t, df, dt) ({ \
-	typeof(v) __$v = (v); \
-	typeof(f) __$f = (f); \
-	typeof(t) __$t = (t); \
-	typeof(df) __$df = (df); \
-	typeof(dt) __$dt = (dt); \
-	(__$v-__$f) / (__$t-__$f) * (__$dt-__$df) + __$df; \
+	$_($v$ , (v) ); \
+	$_($f$ , (f) ); \
+	$_($t$ , (t) ); \
+	$_($df$, (df)); \
+	$_($dt$, (dt)); \
+	($v$-$f$) / ($t$-$f$) * ($dt$-$df$) + $df$; \
 })
 	$_(I, ipu_stack_top());
 	if (!I) return true;
 
 	int y, x;
 	for (y=0; y<256; y++)
-		for (x=0; x<256; x++) {
-			ipu_at(I, x, y)[0] = LIRP(ipu_at(I, x, y)[0], f, t, 0, 1);
-			ipu_at(I, x, y)[1] = LIRP(ipu_at(I, x, y)[1], f, t, 0, 1);
-			ipu_at(I, x, y)[2] = LIRP(ipu_at(I, x, y)[2], f, t, 0, 1);
-		}
+		for (x=0; x<256; x++)
+			ipu_at(I, x, y) = LIRP(ipu_at(I, x, y), f, t, 0.0f, 1.0f);
 
 	return false;
 #undef LIRP
@@ -382,26 +380,17 @@ bool ipu_level(float f, float t)
 
 bool ipu_desaturate()
 {
-#define R_RATIO		0.2126f
-#define G_RATIO		0.7152f
-#define B_RATIO		0.0722f
+	static const v4 ratio = {0.2126f, 0.7152f, 0.0722f};
+
 	$_(I, ipu_stack_top());
 	if (!I) return true;
 
 	int y, x;
 	for (y=0; y<256; y++)
 		for (x=0; x<256; x++)
-			ipu_at(I, x, y)[0] =
-			ipu_at(I, x, y)[1] =
-			ipu_at(I, x, y)[2] =
-					ipu_at(I, x, y)[0]*R_RATIO +
-					ipu_at(I, x, y)[1]*G_RATIO +
-					ipu_at(I, x, y)[2]*B_RATIO;
+			ipu_at(I, x, y) = vspread(vdot(ipu_at(I, x, y), ratio));
 
 	return false;
-#undef R_RATIO
-#undef G_RATIO
-#undef B_RATIO
 }
 
 
