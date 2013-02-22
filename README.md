@@ -4,7 +4,7 @@ Copyright (C) 2013, eXerigumo Clanjor (哆啦比猫/兰威举).<br>
 See `COPYING` for more details.<br>
 <br>
 Written in `GNU C 11`, with `Enlightenment Foundation Library`.<br>
-**Note**: This project is in its alpha stage.
+**Note**: This project is in its `beta` stage.
 
 <hr>
 With `ipu`, you can invent image textures from scratch.
@@ -36,7 +36,7 @@ make
 make test
 ```
 
-For it's an alpha project, "install" function is not provided. If you want
+For it's a beta project, "install" function is not provided. If you want
 to, you can do it in this way:
 
 ```bash
