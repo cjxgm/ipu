@@ -302,10 +302,33 @@ static void execute_nodes()
 		evas_object_size_hint_min_set(image, 256, 256);
 		evas_object_size_hint_padding_set(image, 10, 10, 10, 0);
 
+		$$$(image, EVAS_CALLBACK_FREE,
+			$(void, (void * $1, void * $2, Evas_Object * o) {
+				ipu_ppm_free(evas_object_data_get(o, "ipu:ppm"));
+			}), NULL);
+
+		$$$$(image, "clicked", $(void, (void * $1, Evas_Object * o) {
+			// "static"s can be safely used for later callbacks.
+			static unsigned char * ppm;
+			static size_t ppm_size;
+
+			ppm = evas_object_data_get(o, "ipu:ppm");
+			ppm_size = evas_object_data_get(o, "ipu:ppm_size");
+
+			popup_file_selector("Save PPM image to:", true,
+				$(void, (const char * filename) {
+					FILE * fp = fopen(filename, "w");
+					if (!fp) popup_message("Cannot save image!");
+					fwrite(ppm, ppm_size, 1, fp);
+					fclose(fp);
+				}));
+		}), NULL);
+
 		size_t ppm_size;
 		$_(ppm, ipu_ppm_get(&ppm_size));
 		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
-		ipu_ppm_free(ppm);
+		evas_object_data_set(image, "ipu:ppm", ppm);
+		evas_object_data_set(image, "ipu:ppm_size", ppm_size);
 
 		elm_table_pack(stack, image, 0, i, 1, 1);
 		evas_object_show(image);
