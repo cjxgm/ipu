@@ -2,6 +2,7 @@
 #include <Elementary.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "ui.h"
 #include "util.h"
 #include "ops.h"
@@ -375,7 +376,7 @@ static void popup_file_selector(const char * title, bool is_save,
 	elm_fileselector_is_save_set(fs, is_save);
 	elm_fileselector_expandable_set(fs, false);
 	elm_fileselector_buttons_ok_cancel_set(fs, false);
-	elm_fileselector_path_set(fs, "/tmp");
+	elm_fileselector_path_set(fs, getenv("PWD"));
 	evas_object_size_hint_align_set(fs, EVAS_HINT_FILL, EVAS_HINT_FILL);
 	evas_object_show(fs);
 	elm_object_content_set(popup, limit_min_size(fs, 400, 400));
