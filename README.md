@@ -1,6 +1,8 @@
 # ipu - Image Processing Unit: An Image Synthesizer
-Licensed under GPLv2.<br>
-Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2013.<br>
+Licensed under The MIT License.<br>
+Copyright (C) 2013, eXerigumo Clanjor (哆啦比猫/兰威举).<br>
+See `COPYING` for more details.<br>
+<br>
 Written in `GNU C 11`, with `Enlightenment Foundation Library`.<br>
 **Note**: This project is in its alpha stage.
 
