@@ -15,10 +15,12 @@
  */
 
 static Pool * _P_image;
+static Pool * _P_ppm;
 
 bool ipu_init()
 {
 	_P_image = pool_new(0x100);	// if this fail, let it crash the app!
+	_P_ppm   = pool_new(0x100);	// if this fail, let it crash the app!
 	ipu_stack_select(ipu_stack_new());	// if this fail, let it crash the app!
 	return false;
 }
@@ -618,7 +620,10 @@ unsigned char * ipu_ppm_get(size_t * size)
 	if (!I) return NULL;
 
 	// if this fail, let it crash the app!
-	create(unsigned char, ppm, * PPM_SIZE);
+	unsigned char * ppm;
+	if (!(ppm = pool_get(_P_ppm)))
+		ppm = malloc(PPM_SIZE);
+
 	memcpy(ppm, "P6\n256 256\n255\n", 3+8+4);
 
 	int y, x;
@@ -637,7 +642,8 @@ unsigned char * ipu_ppm_get(size_t * size)
 
 void ipu_ppm_free(unsigned char * ppm)
 {
-	free(ppm);
+	if (pool_put(_P_ppm, ppm))
+		free(ppm);
 }
 
 bool ipu_ppm_save_to_file(const char * filename)

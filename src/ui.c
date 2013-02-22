@@ -313,7 +313,7 @@ static void execute_nodes()
 			static size_t ppm_size;
 
 			ppm = evas_object_data_get(o, "ipu:ppm");
-			ppm_size = evas_object_data_get(o, "ipu:ppm_size");
+			ppm_size = (size_t)evas_object_data_get(o, "ipu:ppm_size");
 
 			popup_file_selector("Save PPM image to:", true,
 				$(void, (const char * filename) {
@@ -328,7 +328,7 @@ static void execute_nodes()
 		$_(ppm, ipu_ppm_get(&ppm_size));
 		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
 		evas_object_data_set(image, "ipu:ppm", ppm);
-		evas_object_data_set(image, "ipu:ppm_size", ppm_size);
+		evas_object_data_set(image, "ipu:ppm_size", (void *)ppm_size);
 
 		elm_table_pack(stack, image, 0, i, 1, 1);
 		evas_object_show(image);
