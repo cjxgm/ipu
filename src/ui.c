@@ -229,6 +229,7 @@ void ui_register_operator(const char * name, int nprop,
 
 		// label
 		$_(label, elm_label_add(win));
+		evas_object_size_hint_padding_set(label, 5, 0, 0, 0);
 		elm_object_text_set(label, info->name);
 		elm_table_pack(table, label, 0, i, 1, 1);
 		evas_object_show(label);
@@ -237,6 +238,7 @@ void ui_register_operator(const char * name, int nprop,
 		$_(spinner, elm_spinner_add(win));
 		evas_object_size_hint_weight_set(spinner, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
 		evas_object_size_hint_fill_set(spinner, EVAS_HINT_FILL, EVAS_HINT_FILL);
+		evas_object_size_hint_padding_set(spinner, 5, 5, 5, 0);
 		elm_spinner_min_max_set(spinner, info->min, info->max);
 		elm_spinner_round_set(spinner, info->round);
 		elm_spinner_step_set(spinner, info->step);
@@ -428,6 +430,7 @@ static void document_open(const char * fn)
 	popup_message("Opened!");
 
 	elm_list_go(nodes);
+	elm_list_item_bring_in(elm_list_last_item_get(nodes));
 	execute_nodes();
 }
 
