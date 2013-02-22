@@ -1,4 +1,4 @@
-# ipu - Image Processing Unit: An Image Synthesizer
+# ipu - Image Processing Unit: A Procedural Image Synthesizer
 Licensed under The MIT License.<br>
 Copyright (C) 2013, eXerigumo Clanjor (哆啦比猫/兰威举).<br>
 See `COPYING` for more details.<br>
@@ -8,7 +8,7 @@ Written in `GNU C 11`, with `Enlightenment Foundation Library`.<br>
 
 <hr>
 With `ipu`, you can invent image textures from scratch.
-![snap](https://f.cloud.github.com/assets/490327/148861/1f7df14e-7515-11e2-9175-abd53f810f30.png)
+![preview](https://f.cloud.github.com/assets/490327/160616/08e2f270-776f-11e2-9179-e048c49d2c17.gif)
 
 ## Requirements
 
@@ -17,6 +17,7 @@ With `ipu`, you can invent image textures from scratch.
 * **bash** (for running configure script)
 * **pkg-config** (nearly every modern Linux has it)
 * Enlightenment Foundation Library ( **EFL** ) with **elementary**
+* **libcrude**, which is already included in the source code.
 
 ## Have a try!
 
