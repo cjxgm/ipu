@@ -101,7 +101,6 @@ EAPI_MAIN int elm_main(int argc, char * argv[])
 			toolbar_no_selected();
 			popup_file_selector("Save to?", true, &document_save);
 		}), NULL);
-	elm_toolbar_item_append(toolbar, "system-run", "Settings", NULL, NULL);
 	elm_toolbar_item_append(toolbar, "edit-delete", "Exit", (void *)&elm_exit, NULL);
 
 	//------------------- content hbox
