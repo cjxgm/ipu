@@ -244,7 +244,7 @@ void ui_register_operator(const char * name, int nprop,
 		elm_table_pack(table, spinner, 1, i, 1, 1);
 		evas_object_show(spinner);
 
-		$$$$(spinner, "changed", $(void, (int idx, Evas_Object * s) {
+		$$$$(spinner, "delay,changed", $(void, (int idx, Evas_Object * s) {
 			$_(o, elm_menu_item_object_get(elm_list_selected_item_get(nodes)));
 
 			// set property
