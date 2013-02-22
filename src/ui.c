@@ -274,7 +274,6 @@ static void execute_nodes()
 {
 	// reset
 	ipu_stack_clear();
-	elm_table_clear(stack, true);
 
 	// execute nodes
 	$_(item, elm_list_first_item_get(nodes));
@@ -296,18 +295,20 @@ static void execute_nodes()
 	}
 
 	// show result in Image Stack
+	elm_table_clear(stack, true);
 	for (int i=ipu_stack_length()-1; i>=0; i--) {
 		$_(image, elm_image_add(win));
 		elm_image_resizable_set(image, 0, 0);
 		evas_object_size_hint_min_set(image, 256, 256);
 		evas_object_size_hint_padding_set(image, 10, 10, 10, 0);
-		elm_table_pack(stack, image, 0, i, 1, 1);
-		evas_object_show(image);
 
 		size_t ppm_size;
 		$_(ppm, ipu_ppm_get(&ppm_size));
 		elm_image_memfile_set(image, ppm, ppm_size, "ppm", NULL);
 		ipu_ppm_free(ppm);
+
+		elm_table_pack(stack, image, 0, i, 1, 1);
+		evas_object_show(image);
 
 		ipu_ignore();
 	}
