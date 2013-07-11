@@ -1,73 +1,93 @@
-#!/bin/bash
-# vim: ft=sh noet ts=4 sw=4 sts=0
+#!/usr/bin/perl -w
+# vim: ft=perl noet ts=4 sw=4 sts=0
 
-main()
+
+
+
+my $CC = "gcc";
+my $LD = "gcc";
+my $CCFLAGS = "-std=gnu11 -march=native -Ofast -Wall "
+			. "-Ilibcrude -Wno-main";
+my $LDFLAGS = "-Llibcrude -lcrude -lm";
+my $dest = "ipu";
+my $test_arg = "./example/bumped-green";
+my @libs = qw(elementary);
+
+
+
+
+my @dirs;
+my %targets;
+
+sub gen_dep
 {
-	local OBJS=""
-	local CCFLAGS="-std=gnu11 -Ilibcrude"
-	local LDFLAGS="-Llibcrude -lcrude -lm"
-	echo "# vim: ft=make noet ts=4 sw=4 sts=0" > makefile
-	gen
-	gen "CC = gcc"
-	gen "CCFLAGS = -march=native -Ofast -Wall -Wno-main $CCFLAGS"
-	gen "LDFLAGS = $LDFLAGS"
-	gen
-	gen "CCFLAGS += \`(pkg-config --cflags elementary)\`"
-	gen "LDFLAGS += \`(pkg-config --libs elementary)\`"
-	gen
-	gen ".PHONY: ipu clean cleanall rebuild reconf test commit"
-	gen
-	gen "ipu: init build/ipu"
-	gen "clean:"
-	gen -e "\trm -rf build"
-	gen "cleanall: clean"
-	gen -e "\trm -f makefile"
-	gen "rebuild: clean init build/ipu"
-	gen "reconf:"
-	gen -e "\t./configure"
-	gen "test: init build/ipu"
-	gen -e "\t./build/ipu ./example/bumped-green"
-	gen "commit: cleanall"
-	gen -e "\tgit add ."
-	gen -e "\tgit diff --cached"
-	gen -e "\tenv LANG=C git commit -a || true"
-	gen -e "\t./configure"
-	gen
-	gen "init: build build/objects"
-	gen "build:"
-	gen -e "\tmkdir build"
-	gen "build/objects:"
-	gen -e "\tmkdir build/objects"
+	my ($dir) = @_;
+	push @dirs, "build/$dir";
+	print "\e[0;32mprocessing \e[0;35m$dir/\n\e[0m";
 
-	for f in src/*.c; do
-		echo -e "\e[0;32mprocessing \e[1;35m$f\e[m"
-		echo -ne "\e[1;31m"
-		gcc $CCFLAGS -MM "$f" > .dep || error
-		local target=build/objects/$(cut -d: -f1 .dep | head -n 1)
-		OBJS="$OBJS $target";
-		gen -n "build/objects/"
-		cat .dep >> makefile
-		gen -e "\t\$(CC) -c -o \$@ \$< \$(CCFLAGS)"
-	done
-	echo -ne "\e[m"
-	rm -f .dep
-	gen "build/ipu:$OBJS"
-	gen -e "\t\$(CC) -o \$@ \$^ \$(LDFLAGS)"
-	gen
+	for (<$dir/*.c>) {
+		print "\e[0;32mprocessing \e[1;35m$_\n\e[1;31m";
+		my $deps = `gcc $CCFLAGS -MM "$_"` or die "\e[0m";
+		print "\e[0m";
+		$deps =~ /^([^:]+):((.|\n)*)\n$/m or die;
+		$targets{"build/$dir/$1"} = $2;
+	}
+
+	for (<$dir/*/>) {
+		s|/$||;
+		&gen_dep($_);
+	}
 }
 
-gen()
+sub write_makefile
 {
-	echo $* >> makefile
+	open my $makefile, ">", "makefile" or die;
+	print $makefile <<EOF;
+# vim: ft=make noet ts=4 sw=4 sts=0
+
+CC = $CC
+LD = $LD
+CCFLAGS = $CCFLAGS
+LDFLAGS = $LDFLAGS
+
+EOF
+	print $makefile "CCFLAGS += `pkg-config --cflags $_`\n" for @libs;
+	print $makefile "LDFLAGS += `pkg-config --libs   $_`\n" for @libs;
+	print $makefile <<EOF;
+
+.PHONY: all clean cleanall rebuild reconf test commit
+
+all: init build/$dest
+clean:
+	rm -rf build
+cleanall: clean
+	rm -f makefile
+rebuild: clean all
+reconf:
+	./configure
+test: all
+	./build/$dest $test_arg
+commit: cleanall
+	git add .
+	git diff --cached
+	env LANG=C git commit -a || true
+	./configure
+
+init: build @dirs
+build:
+	mkdir build
+EOF
+	print $makefile "$_:\n\tmkdir $_\n" for @dirs;
+	print $makefile "\n";
+	print $makefile "$_:$targets{$_}\n\t\$(CC) -c -o \$@ \$< \$(CCFLAGS)\n" for keys %targets;
+	print $makefile <<EOF;
+build/$dest: @{[keys %targets]}
+	\$(LD) -o \$@ \$^ \$(LDFLAGS)
+
+EOF
+	close $makefile
 }
 
-error()
-{
-	echo -ne "\e[m"
-	rm -f .dep
-	exit 1
-}
-
-
-main $*
+&gen_dep("src");
+&write_makefile;
 
