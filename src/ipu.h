@@ -1,7 +1,6 @@
 // vim: noet ts=4 sw=4 sts=0
 // Image Processing Unit
-#ifndef __IPU__
-#define __IPU__
+#pragma once
 
 #include "pack.h"
 
@@ -97,6 +96,4 @@ unsigned char * ipu_ppm_get(size_t * size);
 
 void ipu_ppm_free(unsigned char * ppm);
 bool ipu_ppm_save_to_file(const char * filename);
-
-#endif
 

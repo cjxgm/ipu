@@ -1,7 +1,6 @@
 // vim: noet ts=4 sw=4 sts=0
 // GUI
-#ifndef __IPU$UI__
-#define __IPU$UI__
+#pragma once
 
 #include "util.h"
 
@@ -22,7 +21,4 @@ PropInfo;
 void ui_run();
 void ui_register_operator(const char * name, int nprop,
 		const PropInfo prop_infos[], bool pull(float v[]));
-
-
-#endif
 
